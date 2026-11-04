@@ -1,3 +1,4 @@
+import { mnemonics } from '../../data/mnemonics'
 import { motion } from 'framer-motion'
 import { useEffect } from 'react'
 import type { Exercise } from '../../lib/exercises'
@@ -40,6 +41,12 @@ export function IntroEx({ ex, onChange }: ExProps<Extract<Exercise, { type: 'int
         <Pinyin text={w.pinyin} className="mt-4 text-2xl" />
         <div className="mt-1 font-display text-xl font-semibold">{w.ru}</div>
         {w.note && <p className="mt-4 rounded-2xl bg-gold/20 px-4 py-2.5 text-sm text-ink-2">💡 {w.note}</p>}
+        {[...w.hanzi].filter((c) => mnemonics[c]).slice(0, 2).map((c) => (
+          <p key={c} className="mt-3 rounded-2xl bg-plum/10 px-4 py-2.5 text-left text-sm text-ink-2">
+            <span className="mr-1.5 font-hanzi text-lg text-plum">{c}</span>
+            {mnemonics[c].story}
+          </p>
+        ))}
       </motion.div>
     </div>
   )

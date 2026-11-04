@@ -8,6 +8,7 @@ const Welcome = lazy(() => import('./pages/Welcome'))
 const Practice = lazy(() => import('./pages/Practice'))
 const Characters = lazy(() => import('./pages/Characters'))
 const Tones = lazy(() => import('./pages/Tones'))
+const Exam = lazy(() => import('./pages/Exam'))
 const League = lazy(() => import('./pages/League'))
 const Profile = lazy(() => import('./pages/Profile'))
 const LessonRoute = lazy(() => import('./pages/Lesson').then((m) => ({ default: m.LessonRoute })))
@@ -35,7 +36,8 @@ export default function App() {
           <Route path="/practice" element={<Practice />} />
           <Route path="/characters" element={<Characters />} />
           <Route path="/tones" element={<Tones />} />
-          <Route path="/league" element={<League />} />
+          <Route path="/exam" element={<Exam />} />
+              <Route path="/league" element={<League />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />

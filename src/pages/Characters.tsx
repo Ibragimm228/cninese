@@ -7,6 +7,7 @@ import { HanziWriterBox, type HanziWriterHandle } from '../components/HanziWrite
 import { CloseIcon } from '../components/icons'
 import { SpeakButton } from '../components/SpeakButton'
 import { allSentences, units } from '../data/curriculum'
+import { mnemonics } from '../data/mnemonics'
 import type { Word } from '../data/types'
 import { stripTones } from '../lib/pinyin'
 import { strength } from '../lib/srs'
@@ -114,6 +115,30 @@ function WordDrawer({ word, onClose }: { word: Word; onClose: () => void }) {
           <SpeakButton text={word.hanzi} slow />
         </div>
         {word.note && <p className="mt-5 rounded-2xl bg-gold/20 p-4 text-sm">💡 {word.note}</p>}
+        {chars.some((c) => mnemonics[c]) && (
+          <>
+            <h3 className="mb-3 mt-8 font-display text-sm font-bold uppercase tracking-widest text-ink-soft">Как запомнить</h3>
+            <div className="space-y-3">
+              {chars.filter((c) => mnemonics[c]).map((c) => (
+                <div key={c} className="rounded-3xl border-2 border-paper-3 bg-[#fffdf8] p-4">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-hanzi text-4xl font-semibold text-red">{c}</span>
+                    {mnemonics[c].parts.length > 0 && <span className="text-ink-soft">=</span>}
+                    {mnemonics[c].parts.map((p, i) => (
+                      <span key={i} className="flex items-center gap-2">
+                        {i > 0 && <span className="text-ink-soft">+</span>}
+                        <span className="rounded-xl bg-paper-2 px-2.5 py-1">
+                          <span className="font-hanzi text-xl">{p.c}</span> <span className="text-xs text-ink-soft">{p.m}</span>
+                        </span>
+                      </span>
+                    ))}
+                  </div>
+                  <p className="mt-3 text-[15px] leading-relaxed">{mnemonics[c].story}</p>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
         <h3 className="mb-3 mt-8 font-display text-sm font-bold uppercase tracking-widest text-ink-soft">Порядок черт</h3>
         {chars.length > 1 && (
           <div className="mb-3 flex gap-2">

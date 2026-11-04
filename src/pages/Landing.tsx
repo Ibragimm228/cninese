@@ -10,6 +10,8 @@ import { allSentences, allWords, units } from '../data/curriculum'
 import { TONE_INFO } from '../lib/pinyin'
 import { speak } from '../lib/speech'
 import { useApp } from '../lib/store'
+import { PitchTrainer } from '../components/PitchTrainer'
+import { mnemonics } from '../data/mnemonics'
 import { useLenis } from '../lib/useLenis'
 
 const EASE = [0.16, 1, 0.3, 1] as const
@@ -34,8 +36,11 @@ export default function Landing() {
       <Hero ready={!loading} />
       <MarqueeBand />
       <Manifesto />
+      <WhyUs />
       <Features />
+      <PitchSection />
       <TonesDemo />
+      <MnemonicDemo />
       <StrokeDemo />
       <Numbers />
       <FinalCta />
@@ -100,10 +105,11 @@ function TopNav() {
         <Logo />
         <nav className="hidden items-center gap-8 font-display text-[13px] font-medium uppercase tracking-wider md:flex">
           {[
+            ['#why', 'Почему мы'],
             ['#method', 'Метод'],
             ['#tones', 'Тоны'],
             ['#strokes', 'Иероглифы'],
-            ['#numbers', 'Курс'],
+            
           ].map(([href, label]) => (
             <a key={href} href={href} className="group relative overflow-hidden">
               <span className="block transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:-translate-y-full">{label}</span>
@@ -362,7 +368,7 @@ function MarqueeBand() {
 }
 
 const MANIFESTO =
-  'Мы превратили один из самых сложных языков мира в игру, в которую хочется возвращаться каждый день. Никакой зубрёжки — только ритм, звук и жест кисти.'
+  'Duolingo учит китайскому как испанскому. Мы — нет. Здесь тон видно глазами, иероглиф раскрывается историей, а цель — настоящий HSK. Никакой зубрёжки — только ритм, звук и жест кисти.'
 
 function Manifesto() {
   const ref = useRef<HTMLDivElement>(null)
@@ -390,7 +396,7 @@ function Manifesto() {
 
 function Word({ children, progress, range }: { children: string; progress: MotionValue<number>; range: [number, number] }) {
   const opacity = useTransform(progress, range, [0.12, 1])
-  const highlight = ['игру,', 'звук', 'кисти.', 'ритм,']
+  const highlight = ['видно', 'историей,', 'HSK.', 'звук', 'кисти.', 'ритм,']
   return (
     <motion.span style={{ opacity }} className={clsx('mr-[0.25em] inline-block', highlight.includes(children) && 'font-serif italic font-medium text-red')}>
       {children}
@@ -445,7 +451,7 @@ function Features() {
             Четыре <span className="font-serif font-medium italic text-red">столпа</span>
           </h2>
           <div className="hidden w-60 md:block">
-            <p className="mb-2 font-display text-xs uppercase tracking-[0.3em] text-paper/50">(02) — Метод</p>
+            <p className="mb-2 font-display text-xs uppercase tracking-[0.3em] text-paper/50">(03) — Метод</p>
             <div className="h-[2px] w-full bg-paper/15">
               <motion.div className="h-full origin-left bg-red" style={{ scaleX: scrollYProgress }} />
             </div>
@@ -571,7 +577,7 @@ function TonesDemo() {
       <div className="mx-auto max-w-[1500px]">
         <div className="mb-16 flex flex-col justify-between gap-8 md:flex-row md:items-end">
           <div>
-            <p className="mb-6 font-display text-xs font-semibold uppercase tracking-[0.3em] text-red">(03) — Попробуй сейчас</p>
+            <p className="mb-6 font-display text-xs font-semibold uppercase tracking-[0.3em] text-red">(05) — Попробуй сейчас</p>
             <h2 className="max-w-3xl font-display text-5xl font-bold leading-[0.95] tracking-[-0.03em] md:text-8xl">
               Один слог — <span className="font-serif font-medium italic text-red">четыре</span> смысла
             </h2>
@@ -650,7 +656,7 @@ function StrokeDemo() {
       <span className="pointer-events-none absolute -right-20 top-10 select-none font-brush text-[40vw] leading-none text-ink/[0.04]">书法</span>
       <div className="relative mx-auto grid max-w-[1500px] items-center gap-16 md:grid-cols-2">
         <div>
-          <p className="mb-6 font-display text-xs font-semibold uppercase tracking-[0.3em] text-red">(04) — Каллиграфия</p>
+          <p className="mb-6 font-display text-xs font-semibold uppercase tracking-[0.3em] text-red">(07) — Каллиграфия</p>
           <h2 className="font-display text-5xl font-bold leading-[0.95] tracking-[-0.03em] md:text-7xl">
             Каждая черта <br />
             <span className="font-serif font-medium italic text-red">имеет значение</span>
@@ -750,7 +756,7 @@ function Numbers() {
   return (
     <section id="numbers" className="px-5 py-32 md:px-10 md:py-44">
       <div className="mx-auto max-w-[1500px]">
-        <p className="mb-14 font-display text-xs font-semibold uppercase tracking-[0.3em] text-red">(05) — Курс в цифрах</p>
+        <p className="mb-14 font-display text-xs font-semibold uppercase tracking-[0.3em] text-red">(08) — Курс в цифрах</p>
         <div className="grid border-t-2 border-ink md:grid-cols-4">
           {stats.map((s, i) => (
             <motion.div
@@ -818,7 +824,7 @@ function FinalCta() {
             )),
           )}
         </div>
-        <p className="font-display text-xs font-semibold uppercase tracking-[0.3em]">(06) — Твой ход</p>
+        <p className="font-display text-xs font-semibold uppercase tracking-[0.3em]">(09) — Твой ход</p>
         <h2 className="mt-6 font-display text-[16vw] font-bold leading-[0.85] tracking-[-0.05em] md:text-[11vw]">
           Начни
           <br />
@@ -875,5 +881,153 @@ function Footer() {
         </div>
       </div>
     </footer>
+  )
+}
+
+
+const COMPARE: { f: string; d: string; m: string }[] = [
+  { f: 'Проверка тона голосом', d: 'нет', m: 'график твоего голоса поверх эталона' },
+  { f: 'Иероглифы', d: 'узнать по картинке', m: 'разбор на ключи + история для запоминания' },
+  { f: 'Письмо', d: 'тап по готовым чертам', m: 'пишешь сам, с проверкой порядка черт' },
+  { f: 'Объяснения', d: 'переведены с английского', m: 'написаны для русскоязычных' },
+  { f: 'Цель', d: 'абстрактные «уровни»', m: 'пробный HSK 1 и прогноз готовности' },
+  { f: 'Сердца', d: 'за деньги', m: 'бесплатно, за кристаллы', },
+  { f: 'Реклама', d: 'есть', m: 'нет и не будет' },
+]
+
+function WhyUs() {
+  return (
+    <section id="why" className="relative px-5 py-28 md:px-10 md:py-40">
+      <div className="mx-auto max-w-[1500px]">
+        <div className="grid gap-8 md:grid-cols-[1fr_2fr] md:items-end">
+          <div className="font-display text-xs font-semibold uppercase tracking-[0.3em] text-red">(02) — Почему мы</div>
+          <motion.h2
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-15%' }}
+            transition={{ duration: 0.9, ease: EASE }}
+            className="font-display text-[12vw] font-bold leading-[0.9] tracking-[-0.05em] md:text-[7vw]"
+          >
+            Не ещё один <span className="font-serif font-medium italic text-red">Duolingo</span>
+          </motion.h2>
+        </div>
+        <div className="mt-16 overflow-hidden rounded-[32px] border-2 border-ink">
+          <div className="grid grid-cols-[1.1fr_1fr_1.3fr] bg-ink px-5 py-4 font-display text-[11px] font-semibold uppercase tracking-[0.2em] text-paper md:px-8 md:text-xs">
+            <span />
+            <span className="text-paper/50">Duolingo</span>
+            <span className="text-gold">Mòlì 茉莉</span>
+          </div>
+          {COMPARE.map((r, i) => (
+            <motion.div
+              key={r.f}
+              initial={{ opacity: 0, x: -30 }}
+              whileInView={{ opacity: 1, x: 0 }}
+              viewport={{ once: true, margin: '-10%' }}
+              transition={{ duration: 0.7, delay: i * 0.06, ease: EASE }}
+              className="group grid grid-cols-[1.1fr_1fr_1.3fr] items-center gap-3 border-t-2 border-ink/10 px-5 py-5 transition-colors hover:bg-red hover:text-white md:px-8 md:py-6"
+            >
+              <span className="font-display text-sm font-bold md:text-xl">{r.f}</span>
+              <span className="text-sm text-ink-soft line-through decoration-red/60 group-hover:text-white/60 md:text-base">{r.d}</span>
+              <span className="flex items-center gap-3 text-sm font-semibold md:text-lg">
+                <motion.svg viewBox="0 0 24 24" className="size-6 shrink-0 text-jade group-hover:text-white" fill="none" stroke="currentColor" strokeWidth={3} strokeLinecap="round">
+                  <motion.path d="M4 12.5l5 5L20 6.5" initial={{ pathLength: 0 }} whileInView={{ pathLength: 1 }} viewport={{ once: true }} transition={{ duration: 0.6, delay: 0.3 + i * 0.06 }} />
+                </motion.svg>
+                {r.m}
+              </span>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    </section>
+  )
+}
+
+function PitchSection() {
+  return (
+    <section className="relative bg-ink px-5 py-28 text-paper md:px-10 md:py-40">
+      <div className="mx-auto grid max-w-[1500px] gap-12">
+        <div className="grid gap-8 lg:grid-cols-2 lg:items-end">
+          <div>
+          <div className="font-display text-xs font-semibold uppercase tracking-[0.3em] text-gold">(04) — Зеркало тона</div>
+          <motion.h2
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.9, ease: EASE }}
+            className="mt-6 font-display text-5xl font-bold leading-[0.95] tracking-[-0.04em] md:text-7xl"
+          >
+            Увидь свой <span className="font-serif font-medium italic text-red">голос</span>
+          </motion.h2>
+          </div>
+          <p className="max-w-lg text-lg text-paper/60">
+            Главная беда тех, кто учит китайский, — тоны. Скажи слог в микрофон, и Mòlì нарисует мелодию твоего голоса поверх эталонной, оценит её и подскажет, какой тон получился на самом деле. Запись не покидает браузер.
+          </p>
+        </div>
+        <motion.div initial={{ opacity: 0, scale: 0.94 }} whileInView={{ opacity: 1, scale: 1 }} viewport={{ once: true }} transition={{ duration: 1, ease: EASE }}>
+          <PitchTrainer header={false} />
+        </motion.div>
+      </div>
+    </section>
+  )
+}
+
+const MNEMO_CHARS = ['好', '家', '看', '明', '休']
+
+function MnemonicDemo() {
+  const list = MNEMO_CHARS.filter((c) => mnemonics[c])
+  const [i, setI] = useState(0)
+  const c = list[i]
+  const m = mnemonics[c]
+  return (
+    <section id="mnemo" className="relative overflow-hidden px-5 py-28 md:px-10 md:py-40">
+      <div className="mx-auto max-w-[1500px]">
+        <div className="font-display text-xs font-semibold uppercase tracking-[0.3em] text-red">(06) — Иероглиф как история</div>
+        <div className="mt-10 grid gap-12 lg:grid-cols-2 lg:items-center">
+          <div className="relative grid aspect-square max-w-[560px] place-items-center rounded-[40px] bg-paper-2">
+            <AnimatePresence mode="wait">
+              <motion.div key={c} className="flex items-center gap-3 px-4 md:gap-6" initial="h" animate="v" exit="h">
+                {m.parts.map((p, k) => (
+                  <motion.div
+                    key={k}
+                    variants={{ h: { opacity: 0, y: 40, rotate: -10 }, v: { opacity: 1, y: 0, rotate: 0 } }}
+                    transition={{ duration: 0.6, delay: k * 0.15, ease: EASE }}
+                    className="flex flex-col items-center"
+                  >
+                    <span className="font-hanzi text-5xl font-semibold md:text-7xl xl:text-8xl">{p.c}</span>
+                    <span className="mt-2 rounded-full bg-ink px-3 py-1 text-xs font-semibold text-paper md:text-sm">{p.m}</span>
+                  </motion.div>
+                ))}
+                <motion.span variants={{ h: { opacity: 0 }, v: { opacity: 1 } }} transition={{ delay: 0.4 }} className="font-display text-4xl text-ink-soft">=</motion.span>
+                <motion.span
+                  variants={{ h: { opacity: 0, scale: 0.5 }, v: { opacity: 1, scale: 1 } }}
+                  transition={{ duration: 0.8, delay: 0.55, ease: EASE }}
+                  className="font-brush text-[90px] leading-none text-red md:text-[150px]"
+                >
+                  {c}
+                </motion.span>
+              </motion.div>
+            </AnimatePresence>
+          </div>
+          <div>
+            <h2 className="font-display text-5xl font-bold leading-[0.95] tracking-[-0.04em] md:text-7xl">
+              Не зубри. <span className="font-serif font-medium italic text-red">Пойми.</span>
+            </h2>
+            <AnimatePresence mode="wait">
+              <motion.p key={c} initial={{ opacity: 0, y: 16 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -16 }} transition={{ duration: 0.5 }} className="mt-8 max-w-lg font-serif text-3xl italic leading-snug">
+                «{m.story}»
+              </motion.p>
+            </AnimatePresence>
+            <p className="mt-6 max-w-md text-ink-soft">Сотни иероглифов разобраны на ключи с короткими историями. Так запоминается в разы быстрее, чем зубрёжкой.</p>
+            <div className="mt-8 flex gap-2">
+              {list.map((x, k) => (
+                <button key={x} onClick={() => setI(k)} className={clsx('grid size-14 place-items-center rounded-2xl border-2 font-hanzi text-2xl transition-all', k === i ? 'border-red bg-red text-white' : 'border-ink/15 hover:border-ink')}>
+                  {x}
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
   )
 }

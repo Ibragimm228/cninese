@@ -10,6 +10,7 @@ export const NAV = [
   { to: '/practice', label: 'Практика', hanzi: '练' },
   { to: '/characters', label: 'Иероглифы', hanzi: '字' },
   { to: '/tones', label: 'Тоны', hanzi: '声' },
+  { to: '/exam', label: 'HSK тест', hanzi: '考' },
   { to: '/league', label: 'Лига', hanzi: '赛' },
   { to: '/profile', label: 'Профиль', hanzi: '我' },
 ]
@@ -65,10 +66,17 @@ export function AppShell() {
 
       <main className="md:pl-[88px] xl:pl-64">
         <motion.div
+          key={`bar-${pathname}`}
+          className="fixed inset-x-0 top-0 z-50 h-[3px] origin-left bg-red"
+          initial={{ scaleX: 0, opacity: 1 }}
+          animate={{ scaleX: 1, opacity: 0 }}
+          transition={{ scaleX: { duration: 0.5, ease: [0.16, 1, 0.3, 1] }, opacity: { delay: 0.45, duration: 0.3 } }}
+        />
+        <motion.div
           key={pathname}
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.45, ease: [0.16, 1, 0.3, 1] }}
+          initial={{ opacity: 0, y: 28, filter: 'blur(8px)' }}
+          animate={{ opacity: 1, y: 0, filter: 'blur(0px)' }}
+          transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
           className="pb-28 md:pb-10"
         >
           <Suspense fallback={<div className="grid h-[60vh] place-items-center"><span className="animate-pulse font-brush text-5xl text-red">学</span></div>}>
@@ -78,7 +86,7 @@ export function AppShell() {
       </main>
 
       <nav className="fixed inset-x-0 bottom-0 z-30 flex justify-around border-t-2 border-paper-3 bg-paper/95 px-1 pb-[max(env(safe-area-inset-bottom),6px)] pt-1.5 backdrop-blur md:hidden">
-        {NAV.map((n) => (
+        {NAV.filter((n) => n.to !== '/league').map((n) => (
           <NavLink
             key={n.to}
             to={n.to}

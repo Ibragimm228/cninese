@@ -2,6 +2,7 @@ import clsx from 'clsx'
 import { AnimatePresence, motion } from 'framer-motion'
 import { useCallback, useEffect, useState } from 'react'
 import { PageHeader } from '../components/AppShell'
+import { PitchTrainer } from '../components/PitchTrainer'
 import { Button } from '../components/Button'
 import { SpeakButton } from '../components/SpeakButton'
 import { allWords } from '../data/curriculum'
@@ -72,6 +73,9 @@ export default function Tones() {
         </div>
       </div>
 
+      <div className="mt-14">
+        <PitchTrainer />
+      </div>
       <ToneQuiz />
     </div>
   )

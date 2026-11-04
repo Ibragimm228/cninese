@@ -23,7 +23,7 @@
 
   --font-display: "Unbounded", system-ui, sans-serif, "Noto Serif SC", "PingFang SC", "Microsoft YaHei";
   --font-sans: "Onest", system-ui, sans-serif, "Noto Serif SC", "PingFang SC", "Microsoft YaHei";
-  --font-serif: "Cormorant Garamond", Georgia, serif;
+  --font-serif: "Cormorant Garamond", Georgia, "Noto Serif SC", serif;
   --font-hanzi: "Noto Serif SC", "Songti SC", "SimSun", serif;
   --font-brush: "Ma Shan Zheng", "Noto Serif SC", serif;
 

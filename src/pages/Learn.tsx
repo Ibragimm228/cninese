@@ -157,13 +157,13 @@ function LessonNode({
     <div className="relative flex flex-col items-center">
       {status === 'current' && !open && (
         <motion.div
-          className="absolute -top-12 z-10 whitespace-nowrap rounded-xl border-2 border-paper-3 bg-[#fffdf8] px-3 py-1.5 font-display text-xs font-bold uppercase tracking-wider"
+          className="absolute left-[calc(100%+14px)] top-6 z-10 whitespace-nowrap rounded-xl border-2 border-paper-3 bg-[#fffdf8] px-3 py-1.5 font-display text-xs font-bold uppercase tracking-wider"
           style={{ color: unit.color }}
-          animate={{ y: [0, -6, 0] }}
+          animate={{ x: [0, 6, 0] }}
           transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
         >
           Начать
-          <span className="absolute -bottom-[7px] left-1/2 size-3 -translate-x-1/2 rotate-45 border-b-2 border-r-2 border-paper-3 bg-[#fffdf8]" />
+          <span className="absolute -left-[7px] top-1/2 size-3 -translate-y-1/2 rotate-45 border-b-2 border-l-2 border-paper-3 bg-[#fffdf8]" />
         </motion.div>
       )}
       <button
