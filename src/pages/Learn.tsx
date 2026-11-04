@@ -164,7 +164,7 @@ function LessonNode({
     >
       {status === 'current' && !open && (
         <motion.div
-          className="absolute left-[calc(100%+14px)] top-6 z-10 whitespace-nowrap rounded-xl border-2 border-paper-3 bg-[#fffdf8] px-3 py-1.5 font-display text-xs font-bold uppercase tracking-wider"
+          className="absolute left-[calc(100%+14px)] top-6 z-10 hidden whitespace-nowrap sm:block rounded-xl border-2 border-paper-3 bg-[#fffdf8] px-3 py-1.5 font-display text-xs font-bold uppercase tracking-wider"
           style={{ color: unit.color }}
           animate={{ x: [0, 6, 0] }}
           transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
