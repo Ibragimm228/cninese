@@ -154,7 +154,14 @@ function LessonNode({
   const big = lesson.kind === 'test'
 
   return (
-    <div className="relative flex flex-col items-center">
+    <motion.div
+      className="relative flex flex-col items-center"
+      initial={{ opacity: 0, scale: 0.6, y: 24 }}
+      whileInView={{ opacity: 1, scale: 1, y: 0 }}
+      viewport={{ once: true, margin: '-40px' }}
+      whileHover={locked ? undefined : { scale: 1.06 }}
+      transition={{ type: 'spring', stiffness: 380, damping: 22 }}
+    >
       {status === 'current' && !open && (
         <motion.div
           className="absolute left-[calc(100%+14px)] top-6 z-10 whitespace-nowrap rounded-xl border-2 border-paper-3 bg-[#fffdf8] px-3 py-1.5 font-display text-xs font-bold uppercase tracking-wider"
@@ -232,7 +239,7 @@ function LessonNode({
           </motion.div>
         )}
       </AnimatePresence>
-    </div>
+    </motion.div>
   )
 }
 
