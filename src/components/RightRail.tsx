@@ -12,7 +12,7 @@ export function RightRail() {
   const unlocked = achievements.filter((a) => s.achievements[a.id])
   return (
     <aside className="right-rail hidden w-[310px] shrink-0 flex-col gap-4 lg:flex" aria-label="Прогресс обучения">
-      <section className="rounded-3xl border-2 border-paper-3 bg-[#fffdf8] p-5">
+      <section className="rounded-3xl border-2 border-paper-3 bg-card p-5">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-display text-base font-bold">Цель дня</h3>
           <Link to="/profile" className="text-xs font-bold uppercase tracking-wider text-sky hover:underline">
@@ -48,7 +48,7 @@ export function RightRail() {
         </div>
       </section>
 
-      <section className="rounded-3xl border-2 border-paper-3 bg-[#fffdf8] p-5">
+      <section className="rounded-3xl border-2 border-paper-3 bg-card p-5">
         <div className="mb-4 flex items-center gap-2">
           <FlameIcon size={26} />
           <h3 className="font-display text-base font-bold">{s.streak} дн. подряд</h3>
@@ -88,7 +88,7 @@ export function RightRail() {
         </Link>
       </section>
 
-      <section className="rounded-3xl border-2 border-paper-3 bg-[#fffdf8] p-5">
+      <section className="rounded-3xl border-2 border-paper-3 bg-card p-5">
         <div className="mb-3 flex items-center justify-between">
           <h3 className="font-display text-base font-bold">Достижения</h3>
           <span className="text-sm font-semibold text-ink-soft">

@@ -3,8 +3,11 @@ import { MotionConfig } from 'framer-motion'
 import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigationType } from 'react-router-dom'
 import { AppShell } from './components/AppShell'
 import Learn from './pages/Learn'
+import { useApp } from './lib/store'
+import { ThemeSwitcher } from './components/ThemeSwitcher'
 
 const Landing = lazy(() => import('./pages/Landing'))
+const LandingStage = lazy(() => import('./pages/LandingStage'))
 const Welcome = lazy(() => import('./pages/Welcome'))
 const Practice = lazy(() => import('./pages/Practice'))
 const Characters = lazy(() => import('./pages/Characters'))
@@ -26,6 +29,7 @@ function Loader() {
 function AppRoutes() {
   const { pathname, hash } = useLocation()
   const navigationType = useNavigationType()
+  const classic = useApp((s) => !s.theme || s.theme === 'moli')
 
   useLayoutEffect(() => {
     if (navigationType !== 'POP' && !hash) window.scrollTo(0, 0)
@@ -34,7 +38,7 @@ function AppRoutes() {
   return (
     <Suspense fallback={<Loader />}>
       <Routes>
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={classic ? <Landing /> : <LandingStage />} />
         <Route path="/welcome" element={<Welcome />} />
         <Route path="/lesson/:id" element={<LessonRoute />} />
         <Route path="/practice/:mode" element={<PracticeRoute />} />
@@ -57,6 +61,7 @@ export default function App() {
   return (
     <MotionConfig reducedMotion="user">
       <BrowserRouter>
+        <ThemeSwitcher />
         <AppRoutes />
       </BrowserRouter>
     </MotionConfig>

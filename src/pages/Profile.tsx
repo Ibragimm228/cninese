@@ -36,7 +36,7 @@ export default function Profile() {
       <CompanionPicker />
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {stats.map((x, i) => (
-          <motion.div key={x.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }} className="flex items-center gap-3 rounded-3xl border-2 border-paper-3 bg-[#fffdf8] p-4">
+          <motion.div key={x.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }} className="flex items-center gap-3 rounded-3xl border-2 border-paper-3 bg-card p-4">
             {x.icon}
             <div>
               <p className="font-display text-xl font-bold">{x.value}</p>
@@ -46,7 +46,7 @@ export default function Profile() {
         ))}
       </div>
 
-      <section className="mt-8 rounded-3xl border-2 border-paper-3 bg-[#fffdf8] p-6">
+      <section className="mt-8 rounded-3xl border-2 border-paper-3 bg-card p-6">
         <h2 className="font-display text-lg font-bold">Опыт за неделю</h2>
         <div className="mt-6 flex h-48 items-end gap-3">
           {days.map((d, i) => {
@@ -68,7 +68,7 @@ export default function Profile() {
           {achievements.map((a) => {
             const got = !!s.achievements[a.id]
             return (
-              <div key={a.id} className={clsx('rounded-3xl border-2 p-4 text-center', got ? 'border-gold border-b-[5px] bg-[#fffdf8]' : 'border-paper-3 bg-paper-2 opacity-60')}>
+              <div key={a.id} className={clsx('rounded-3xl border-2 p-4 text-center', got ? 'border-gold border-b-[5px] bg-card' : 'border-paper-3 bg-paper-2 opacity-60')}>
                 <div className={clsx('text-4xl', !got && 'grayscale')}>{a.icon}</div>
                 <p className="mt-2 font-display text-sm font-bold">{a.title}</p>
                 <p className="text-xs text-ink-soft">{a.desc}</p>
@@ -79,7 +79,7 @@ export default function Profile() {
       </section>
 
       <section className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">
-        <div className="rounded-3xl border-2 border-paper-3 bg-[#fffdf8] p-6">
+        <div className="rounded-3xl border-2 border-paper-3 bg-card p-6">
           <h2 className="font-display text-lg font-bold">Настройки</h2>
           <label className="mt-5 block text-sm font-semibold text-ink-soft">Имя</label>
           <div className="mt-1 flex gap-2">
@@ -89,7 +89,7 @@ export default function Profile() {
           <label className="mt-5 block text-sm font-semibold text-ink-soft">Цель дня</label>
           <div className="mt-1 grid grid-cols-4 gap-2">
             {[10, 30, 50, 80].map((g) => (
-              <button key={g} onClick={() => s.setDailyGoal(g)} className={clsx('rounded-xl border-2 py-2 font-display text-sm font-bold', s.dailyGoal === g ? 'border-sky bg-[#e8f0ff] text-sky-dark' : 'border-paper-3')}>
+              <button key={g} onClick={() => s.setDailyGoal(g)} className={clsx('rounded-xl border-2 py-2 font-display text-sm font-bold', s.dailyGoal === g ? 'border-sky bg-sky-soft text-sky-dark' : 'border-paper-3')}>
                 {g} XP
               </button>
             ))}
@@ -101,7 +101,7 @@ export default function Profile() {
           {!hasChineseVoice() && <p className="mt-3 rounded-xl bg-gold/20 p-3 text-sm">В браузере не найден китайский голос — озвучка может не работать. Лучше всего — Chrome, Edge или Safari.</p>}
         </div>
         <div className="flex flex-col gap-6">
-          <div className="rounded-3xl border-2 border-paper-3 bg-[#fffdf8] p-6">
+          <div className="rounded-3xl border-2 border-paper-3 bg-card p-6">
             <h2 className="flex items-center gap-2 font-display text-lg font-bold">Магазин <GemIcon size={20} /> <span className="text-sky">{s.gems}</span></h2>
             <div className="mt-4 flex items-center gap-3">
               <SnowIcon size={36} />
@@ -143,7 +143,7 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
     <button onClick={() => onChange(!value)} className="mt-5 flex w-full items-center justify-between" role="switch" aria-checked={value}>
       <span className="font-semibold">{label}</span>
       <span className={clsx('relative h-7 w-12 rounded-full transition-colors', value ? 'bg-jade' : 'bg-paper-3')}>
-        <motion.span layout className="absolute top-1 size-5 rounded-full bg-white shadow" style={{ left: value ? 24 : 4 }} />
+        <motion.span layout className="absolute top-1 size-5 rounded-full bg-card shadow" style={{ left: value ? 24 : 4 }} />
       </span>
     </button>
   )

@@ -4,6 +4,7 @@ import { achievements } from '../data/achievements'
 import type { CompanionId } from '../data/companions'
 import { addDays, dayKey } from './date'
 import { review, type WordProgress } from './srs'
+import type { ThemeId } from './theme'
 
 export const MAX_HEARTS = 5
 const HEART_REGEN_MS = 20 * 60 * 1000
@@ -32,6 +33,7 @@ export type AppState = {
   onboarded: boolean
   dailyGoal: number
   companionId: CompanionId
+  theme: ThemeId
   xp: number
   xpByDay: Record<string, number>
   streak: number
@@ -69,6 +71,7 @@ type Actions = {
   finishOnboarding: (goal: number) => void
   setDailyGoal: (goal: number) => void
   setCompanion: (id: CompanionId) => void
+  setTheme: (theme: ThemeId) => void
   setSettings: (s: Partial<Settings>) => void
   recordWord: (wordId: string, ok: boolean) => void
   loseHeart: () => void
@@ -86,6 +89,7 @@ const initial: AppState = {
   onboarded: false,
   dailyGoal: 30,
   companionId: 'chrollo',
+  theme: 'moli',
   xp: 0,
   xpByDay: {},
   streak: 0,
@@ -122,6 +126,7 @@ export const useApp = create<AppState & Actions>()(
       finishOnboarding: (goal) => set({ onboarded: true, dailyGoal: goal }),
       setDailyGoal: (dailyGoal) => set({ dailyGoal }),
       setCompanion: (companionId) => set({ companionId }),
+      setTheme: (theme) => set({ theme }),
       setSettings: (s) => set((st) => ({ settings: { ...st.settings, ...s } })),
       recordWord: (wordId, ok) =>
         set((st) => ({

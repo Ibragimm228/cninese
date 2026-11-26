@@ -43,7 +43,7 @@ export default function Practice() {
               </span>
               <h3 className={`relative font-display font-bold ${m.big ? 'text-3xl' : 'text-xl'}`}>{m.title}</h3>
               <p className="relative mt-1 text-white/85">{m.desc}</p>
-              <span className="relative mt-6 inline-block rounded-xl bg-white/20 px-4 py-2 text-xs font-bold uppercase tracking-wider">Начать</span>
+              <span className="relative mt-6 inline-block rounded-xl bg-card/20 px-4 py-2 text-xs font-bold uppercase tracking-wider">Начать</span>
             </motion.button>
           ))}
         </div>
@@ -56,7 +56,7 @@ export default function Practice() {
             {learned.map((w) => {
               const st = strength(s.words[w.id])
               return (
-                <div key={w.id} className="flex items-center gap-3 rounded-2xl border-2 border-paper-3 bg-[#fffdf8] px-4 py-3">
+                <div key={w.id} className="flex items-center gap-3 rounded-2xl border-2 border-paper-3 bg-card px-4 py-3">
                   <span className="w-14 font-hanzi text-2xl font-semibold">{w.hanzi}</span>
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-semibold">

@@ -37,7 +37,7 @@ export default function Characters() {
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Поиск: 你好, nihao, привет…"
-          className="flex-1 rounded-2xl border-2 border-paper-3 bg-[#fffdf8] px-5 py-3 text-lg outline-none focus:border-sky"
+          className="flex-1 rounded-2xl border-2 border-paper-3 bg-card px-5 py-3 text-lg outline-none focus:border-sky"
         />
         <div className="flex gap-2">
           {(['all', 'learned', 'new'] as const).map((f) => (
@@ -120,7 +120,7 @@ function WordDrawer({ word, onClose }: { word: Word; onClose: () => void }) {
             <h3 className="mb-3 mt-8 font-display text-sm font-bold uppercase tracking-widest text-ink-soft">Как запомнить</h3>
             <div className="space-y-3">
               {chars.filter((c) => mnemonics[c]).map((c) => (
-                <div key={c} className="rounded-3xl border-2 border-paper-3 bg-[#fffdf8] p-4">
+                <div key={c} className="rounded-3xl border-2 border-paper-3 bg-card p-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-hanzi text-4xl font-semibold text-red">{c}</span>
                     {mnemonics[c].parts.length > 0 && <span className="text-ink-soft">=</span>}
@@ -149,7 +149,7 @@ function WordDrawer({ word, onClose }: { word: Word; onClose: () => void }) {
             ))}
           </div>
         )}
-        <div className="flex flex-col items-center rounded-3xl border-2 border-paper-3 bg-[#fffdf8] p-4">
+        <div className="flex flex-col items-center rounded-3xl border-2 border-paper-3 bg-card p-4">
           <HanziWriterBox ref={ref} key={`${chars[ci]}-${quiz}`} char={chars[ci]} size={260} mode={quiz ? 'quiz' : 'animate'} />
           <div className="mt-4 flex gap-2">
             <Button variant="paper" onClick={() => (quiz ? setQuiz(false) : ref.current?.animate())}>Анимация</Button>
@@ -161,7 +161,7 @@ function WordDrawer({ word, onClose }: { word: Word; onClose: () => void }) {
             <h3 className="mb-3 mt-8 font-display text-sm font-bold uppercase tracking-widest text-ink-soft">Примеры</h3>
             <div className="space-y-2">
               {examples.map((s) => (
-                <div key={s.id} className="flex items-center gap-3 rounded-2xl border-2 border-paper-3 bg-[#fffdf8] p-3">
+                <div key={s.id} className="flex items-center gap-3 rounded-2xl border-2 border-paper-3 bg-card p-3">
                   <SpeakButton text={s.tokens.join('')} size="sm" />
                   <div>
                     <p className="font-hanzi text-xl">{s.tokens.join('')}</p>

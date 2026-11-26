@@ -63,31 +63,11 @@ export function AppShell() {
         </main>
       </div>
 
-      <nav aria-label="Разделы" className="fixed inset-x-0 bottom-0 z-30 flex justify-around border-t border-paper-3 bg-paper/95 px-1 pb-[max(env(safe-area-inset-bottom),6px)] pt-1.5 backdrop-blur md:hidden">
-        {NAV.filter((n) => n.to !== '/league').map((n) => (
-          <NavLink
-            key={n.to}
-            to={n.to}
-            className={({ isActive }) =>
-              clsx(
-                'flex flex-col items-center gap-0.5 rounded-xl px-1 py-1 text-[9px] font-semibold min-[360px]:px-2 min-[360px]:text-[10px]',
-                isActive ? 'text-red' : 'text-ink-soft',
-              )
-            }
-          >
-            {({ isActive }) => (
-              <>
-                <span
-                  className={clsx(
-                    'grid size-9 place-items-center rounded-xl font-hanzi text-lg font-black transition-colors',
-                    isActive ? 'bg-red text-paper' : 'bg-paper-2 text-ink',
-                  )}
-                >
-                  {n.hanzi}
-                </span>
-                {n.label}
-              </>
-            )}
+      <nav aria-label="Разделы" className="app-dock">
+        {NAV.map((n) => (
+          <NavLink key={n.to} to={n.to} title={n.label} className={clsx('app-dock-link', n.to === '/league' && 'app-dock-link--wide')}>
+            <span className="app-dock-glyph" aria-hidden="true">{n.hanzi}</span>
+            <span className="app-dock-text">{n.label}</span>
           </NavLink>
         ))}
       </nav>

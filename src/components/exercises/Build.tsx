@@ -83,16 +83,16 @@ export function BuildEx({ ex, locked, onChange }: ExProps<Extract<Exercise, { ty
         ) : ex.direction === 'zh-ru' ? (
           <>
             <SpeakButton text={text} size="md" />
-            <div className="relative rounded-2xl border-2 border-paper-3 bg-[#fffdf8] px-5 py-3">
-              <span className="absolute -left-[9px] top-5 size-4 rotate-45 border-b-2 border-l-2 border-paper-3 bg-[#fffdf8]" />
+            <div className="relative rounded-2xl border-2 border-paper-3 bg-card px-5 py-3">
+              <span className="absolute -left-[9px] top-5 size-4 rotate-45 border-b-2 border-l-2 border-paper-3 bg-card" />
               <HanziLine tokens={ex.sentence.tokens} size="md" />
             </div>
           </>
         ) : (
           <>
             <span className="grid size-14 shrink-0 place-items-center rounded-2xl bg-red font-hanzi text-2xl font-black text-paper">译</span>
-            <div className="relative rounded-2xl border-2 border-paper-3 bg-[#fffdf8] px-5 py-4 text-xl font-semibold">
-              <span className="absolute -left-[9px] top-5 size-4 rotate-45 border-b-2 border-l-2 border-paper-3 bg-[#fffdf8]" />
+            <div className="relative rounded-2xl border-2 border-paper-3 bg-card px-5 py-4 text-xl font-semibold">
+              <span className="absolute -left-[9px] top-5 size-4 rotate-45 border-b-2 border-l-2 border-paper-3 bg-card" />
               {ex.sentence.ru}
             </div>
           </>

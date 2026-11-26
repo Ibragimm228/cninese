@@ -52,7 +52,7 @@ export function OptionCard({
       whileHover={disabled ? undefined : { y: -2 }}
       className={clsx(
         'card3d relative flex items-center gap-3 px-4 py-3.5 text-left',
-        selected && !state && '!border-sky !bg-[#e8f0ff] text-sky-dark',
+        selected && !state && '!border-sky !bg-sky-soft text-sky-dark',
         state === 'correct' && '!border-jade !bg-jade-soft text-jade-dark',
         state === 'wrong' && '!border-wrong !bg-wrong-soft text-wrong-dark shake',
         className,

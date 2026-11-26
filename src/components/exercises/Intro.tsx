@@ -25,7 +25,7 @@ export function IntroEx({ ex, onChange }: ExProps<Extract<Exercise, { type: 'int
         initial={{ rotateX: 70, opacity: 0 }}
         animate={{ rotateX: 0, opacity: 1 }}
         transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        className="relative mx-auto flex max-w-md flex-col items-center overflow-hidden rounded-[32px] border-2 border-paper-3 border-b-[6px] bg-[#fffdf8] px-6 pb-8 pt-10 text-center"
+        className="relative mx-auto flex max-w-md flex-col items-center overflow-hidden rounded-[32px] border-2 border-paper-3 border-b-[6px] bg-card px-6 pb-8 pt-10 text-center"
         style={{ perspective: 800 }}
       >
         <span className="absolute left-5 top-5 text-4xl">{w.emoji}</span>

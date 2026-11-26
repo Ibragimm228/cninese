@@ -69,7 +69,7 @@ export function PitchTrainer({ dark = true, header = true }: { dark?: boolean; h
             : 'Мелодия пока не та — послушай эталон'
 
   return (
-    <div className={clsx('relative overflow-hidden rounded-[32px] p-6 md:p-10', dark ? 'bg-ink text-paper' : 'border-2 border-paper-3 bg-[#fffdf8]')}>
+    <div className={clsx('relative overflow-hidden rounded-[32px] p-6 md:p-10', dark ? 'bg-ink text-paper' : 'border-2 border-paper-3 bg-card')}>
       <div className={clsx('flex flex-wrap items-end gap-4', header ? 'justify-between' : 'justify-end')}>
         <div className={clsx(!header && 'hidden')}>
           <p className="font-display text-xs font-semibold uppercase tracking-[0.25em] text-gold">Только в Mòlì · микрофон</p>
@@ -88,7 +88,7 @@ export function PitchTrainer({ dark = true, header = true }: { dark?: boolean; h
       </div>
 
       <div className="mt-8 grid gap-8 lg:grid-cols-[1fr_auto]">
-        <div className={clsx('relative rounded-3xl p-3', dark ? 'bg-white/[0.04]' : 'bg-paper-2')}>
+        <div className={clsx('relative rounded-3xl p-3', dark ? 'bg-card/[0.04]' : 'bg-paper-2')}>
           <svg viewBox={`0 0 ${W} ${H}`} className="max-h-[300px] w-full">
             {[-0.66, 0, 0.66].map((y) => (
               <line key={y} x1={24} x2={W - 24} y1={H / 2 - y * (H / 2 - 22)} y2={H / 2 - y * (H / 2 - 22)} stroke="currentColor" strokeOpacity={0.12} strokeDasharray="4 6" />

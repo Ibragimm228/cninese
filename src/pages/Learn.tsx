@@ -21,9 +21,7 @@ export default function Learn() {
   return (
     <div className="learn-layout">
       <div className="learn-intro">
-        <p className="studio-label"><span className="status-dot" /> Твой маршрут · HSK 1</p>
-        <h1>Твой китайский<span>.</span></h1>
-        <p>Привет, {s.name}! Новый день — новый шаг в китайском.</p>
+        <h1>你好, {s.name}<span>.</span></h1>
       </div>
 
       <section className="learn-hero" aria-label="Следующий шаг">
@@ -32,7 +30,6 @@ export default function Learn() {
         <div className="learn-hero-copy">
           <p className="studio-label"><span className="status-dot" /> {next ? 'Следующий шаг' : 'Маршрут завершён'}</p>
           <h2>{next ? next.title : 'HSK 1 пройден!'}</h2>
-          <p>{next ? 'Удели несколько минут китайскому сегодня.' : 'Закрепи знания в режиме практики.'}</p>
           <Link className="editorial-cta" to={next ? `/lesson/${next.id}` : '/practice'}>
             {next ? 'К уроку' : 'Практика'} <span><ArrowRight size={18} /></span>
           </Link>
@@ -43,7 +40,7 @@ export default function Learn() {
       <div className="learn-pet"><CompanionCard /></div>
       <div className="learn-track">
         <div className="track-heading">
-          <div><p className="studio-label">01 / ПРОГРАММА</p><h2>Путь обучения</h2></div>
+          <h2>HSK 1</h2>
           <span>{completed} / {lessons.length} уроков</span>
         </div>
         {units.map((unit) => (
@@ -57,7 +54,6 @@ export default function Learn() {
         ))}
         <div className="my-16 text-center">
           <p className="font-brush text-7xl text-red">加油</p>
-          <p className="mt-2 font-display text-sm uppercase tracking-[0.3em] text-ink-soft">Новые юниты скоро</p>
         </div>
       </div>
       <RightRail />
@@ -88,7 +84,6 @@ function UnitSection({
         <div>
           <p className="studio-label">Юнит {String(unit.index + 1).padStart(2, '0')} · HSK 1</p>
           <h3>{unit.title}</h3>
-          <p className="unit-subtitle">{unit.subtitle}</p>
         </div>
         <button type="button" className="editorial-icon" onClick={onTip} aria-label={`Подсказка: ${unit.title}`} title="Подсказка"><BookIcon size={19} /></button>
       </div>

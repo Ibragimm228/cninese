@@ -206,7 +206,7 @@ function LessonPlayer({
             animate={{ width: `${Math.max(4, progress * 100)}%` }}
             transition={{ type: 'spring', damping: 20, stiffness: 120 }}
           >
-            <span className="absolute inset-x-2 top-1 h-1 rounded-full bg-white/35" />
+            <span className="absolute inset-x-2 top-1 h-1 rounded-full bg-card/35" />
           </motion.div>
           <AnimatePresence>
             {showCombo && (
@@ -282,7 +282,7 @@ function LessonPlayer({
                   initial={{ scale: 0, rotate: -30 }}
                   animate={{ scale: 1, rotate: 0 }}
                   transition={{ type: 'spring', damping: 12 }}
-                  className={clsx('hidden size-16 place-items-center rounded-full bg-white md:grid')}
+                  className={clsx('hidden size-16 place-items-center rounded-full bg-card md:grid')}
                 >
                   {checked.ok ? <CheckIcon size={36} /> : <CloseIcon size={32} />}
                 </motion.span>
@@ -453,7 +453,7 @@ function Results({
                   style={{ borderColor: s.color, background: s.color }}
                 >
                   <p className="flex items-center justify-center gap-1 py-1.5 text-[11px] font-bold uppercase tracking-widest text-white">{s.label}</p>
-                  <p className="flex items-center justify-center gap-1.5 rounded-xl bg-[#fffdf8] py-4 font-display text-xl font-bold" style={{ color: s.color }}>
+                  <p className="flex items-center justify-center gap-1.5 rounded-xl bg-card py-4 font-display text-xl font-bold" style={{ color: s.color }}>
                     {s.value}
                   </p>
                 </motion.div>
@@ -489,7 +489,7 @@ function Results({
                     initial={{ rotateY: 180, opacity: 0 }}
                     animate={{ rotateY: 0, opacity: 1 }}
                     transition={{ delay: i * 0.2, duration: 0.8 }}
-                    className="w-48 rounded-3xl border-2 border-gold border-b-[6px] bg-[#fffdf8] p-6"
+                    className="w-48 rounded-3xl border-2 border-gold border-b-[6px] bg-card p-6"
                   >
                     <div className="text-6xl">{a.icon}</div>
                     <p className="mt-3 font-display text-lg font-bold">{a.title}</p>

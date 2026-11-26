@@ -93,7 +93,7 @@ export default function Exam() {
               Начать тест
             </button>
           </div>
-          <div className="rounded-[32px] border-2 border-paper-3 bg-[#fffdf8] p-8">
+          <div className="rounded-[32px] border-2 border-paper-3 bg-card p-8">
             <p className="font-display text-xs font-semibold uppercase tracking-[0.25em] text-ink-soft">Прогноз готовности</p>
             <div className="mt-4 flex items-end gap-2">
               <span className="font-display text-7xl font-bold text-jade">{forecast}%</span>

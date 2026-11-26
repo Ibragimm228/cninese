@@ -182,7 +182,7 @@ export function FillEx({ ex, locked, onChange }: ExProps<Extract<Exercise, { typ
   return (
     <div>
       <ExTitle>Заполни пропуск</ExTitle>
-      <div className="mb-3 rounded-3xl border-2 border-paper-3 bg-[#fffdf8] p-6">
+      <div className="mb-3 rounded-3xl border-2 border-paper-3 bg-card p-6">
         <HanziLine tokens={ex.sentence.tokens} blank={ex.blank} blankContent={sel !== null ? ex.options[sel].hanzi : undefined} />
         <p className="mt-4 text-ink-soft">{ex.sentence.ru}</p>
       </div>

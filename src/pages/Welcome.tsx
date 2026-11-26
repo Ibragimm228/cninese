@@ -51,7 +51,7 @@ export default function Welcome() {
                   onKeyDown={(e) => e.key === 'Enter' && setStep(1)}
                   placeholder="Твоё имя"
                   maxLength={24}
-                  className="mt-8 w-full rounded-2xl border-2 border-paper-3 border-b-[5px] bg-[#fffdf8] px-5 py-4 font-display text-xl outline-none focus:border-sky"
+                  className="mt-8 w-full rounded-2xl border-2 border-paper-3 border-b-[5px] bg-card px-5 py-4 font-display text-xl outline-none focus:border-sky"
                 />
                 <Button
                   variant="primary"
@@ -74,7 +74,7 @@ export default function Welcome() {
                     <button
                       key={g.xp}
                       onClick={() => setGoal(g.xp)}
-                      className={clsx('card3d flex items-center gap-4 px-5 py-4 text-left', goal === g.xp && '!border-sky !bg-[#e8f0ff]')}
+                      className={clsx('card3d flex items-center gap-4 px-5 py-4 text-left', goal === g.xp && '!border-sky !bg-sky-soft')}
                     >
                       <span className={clsx('grid size-12 place-items-center rounded-xl font-hanzi text-2xl font-black', goal === g.xp ? 'bg-sky text-white' : 'bg-paper-2')}>
                         {g.hanzi}

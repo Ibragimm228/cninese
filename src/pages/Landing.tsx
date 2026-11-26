@@ -2,7 +2,7 @@ import clsx from 'clsx'
 import { AnimatePresence, motion, useInView, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform, type MotionValue } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { CompanionArt } from '../components/Companion'
+import { Companion3D } from '../components/Companion3D'
 import { HanziWriterBox } from '../components/HanziWriterBox'
 import { ArrowRight, ArrowUpRight, CheckIcon, FlameIcon, HeartIcon, SparkIcon, SpeakerIcon } from '../components/icons'
 import { Logo } from '../components/Logo'
@@ -11,7 +11,6 @@ import { TONE_INFO } from '../lib/pinyin'
 import { speak } from '../lib/speech'
 import { useApp } from '../lib/store'
 import { PitchTrainer } from '../components/PitchTrainer'
-import { companions } from '../data/companions'
 import { mnemonics } from '../data/mnemonics'
 import { useLenis } from '../lib/useLenis'
 
@@ -139,7 +138,7 @@ function Hero() {
             <p className="studio-label"><span className="status-dot" /> КЛУБ СЕРИИ</p>
             <span className="landing-poster-orbit" aria-hidden="true" />
             <span className="landing-poster-glyph" aria-hidden="true">伴</span>
-            {companions.slice(0, 3).map((companion) => <CompanionArt key={companion.id} companion={companion} className={`poster-pet poster-pet--${companion.id}`} />)}
+            <Companion3D ids={['kuroko', 'chrollo', 'ichigo']} className="poster-stage" accent="#ffd9a0" />
             <span className="poster-spark" aria-hidden="true"><SparkIcon size={38} /></span>
             <div className="landing-poster-caption"><span>ТВОИ АНИМЕ-СПУТНИКИ</span><span>01—04</span></div>
           </div>
@@ -537,7 +536,7 @@ function StrokeDemo() {
           </div>
         </div>
         <div className="flex flex-col items-center">
-          <div className="relative rounded-[36px] bg-[#fffdf8] p-5 shadow-[16px_16px_0_#121110]">
+          <div className="relative rounded-[36px] bg-card p-5 shadow-[16px_16px_0_#121110]">
             <HanziWriterBox key={`${ch.c}-${quiz}`} char={ch.c} size={Math.min(380, typeof window !== 'undefined' ? window.innerWidth - 80 : 380)} mode={quiz ? 'quiz' : 'animate'} loop={!quiz} onQuizComplete={() => setDone(true)} />
             <AnimatePresence>
               {done && (
@@ -625,7 +624,7 @@ function Numbers() {
               <p className="relative mt-1 text-white/85">{u.subtitle}</p>
               <p className="relative mt-6 flex flex-wrap gap-2">
                 {u.words.slice(0, 5).map((w) => (
-                  <span key={w.id} className="rounded-full bg-white/20 px-3 py-1 font-hanzi text-sm">
+                  <span key={w.id} className="rounded-full bg-card/20 px-3 py-1 font-hanzi text-sm">
                     {w.hanzi}
                   </span>
                 ))}

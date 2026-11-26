@@ -58,7 +58,7 @@ export function MatchEx({ ex, onChange }: ExProps<Extract<Exercise, { type: 'mat
         animate={isDone ? { opacity: 0.35, scale: 0.97 } : { opacity: 1, scale: 1 }}
         className={clsx(
           'card3d flex min-h-[68px] items-center justify-center px-3 py-2 text-center',
-          isSel && '!border-sky !bg-[#e8f0ff] text-sky-dark',
+          isSel && '!border-sky !bg-sky-soft text-sky-dark',
           isWrong && '!border-wrong !bg-wrong-soft text-wrong-dark shake',
           isDone && '!border-jade !bg-jade-soft text-jade-dark',
         )}

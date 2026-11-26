@@ -43,14 +43,14 @@ export default function League() {
           <span className="font-brush text-6xl">玉</span>
           <p className="text-white/90">Топ-5 переходят в Лигу Золота. Зарабатывай XP в уроках и практике, чтобы подняться выше!</p>
         </div>
-        <ol className="overflow-hidden rounded-3xl border-2 border-paper-3 bg-[#fffdf8]">
+        <ol className="overflow-hidden rounded-3xl border-2 border-paper-3 bg-card">
           {rows.map((r, i) => (
             <motion.li
               key={r.name}
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: i * 0.03 }}
-              className={clsx('flex items-center gap-4 border-b-2 border-paper-2 px-5 py-3.5 last:border-0', r.me && 'bg-[#e8f0ff]', i === 5 && 'border-b-jade')}
+              className={clsx('flex items-center gap-4 border-b-2 border-paper-2 px-5 py-3.5 last:border-0', r.me && 'bg-sky-soft', i === 5 && 'border-b-jade')}
             >
               <span className={clsx('w-7 text-center font-display font-bold', i < 3 ? 'text-xl' : 'text-ink-soft')}>{i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span>
               <span className={clsx('grid size-10 place-items-center rounded-full font-display font-bold text-white')} style={{ background: r.me ? '#3d7bf7' : ['#e63b2e', '#22a06b', '#8b5cf6', '#f2b33d', '#ec4899', '#0ea5a4'][i % 6] }}>
