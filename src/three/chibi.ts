@@ -655,6 +655,8 @@ export function createChibi(id: CompanionId, reducedMotion = false): Chibi {
   const phase = { chrollo: 0, kuroko: 1.3, ichigo: 2.6, anya: 3.9 }[id]
   let hop = 0
   let cheer = 0
+  // with reduced motion a gesture is a held pose, not an animation
+  let greet = false
   let nextBlink = 1.5 + phase
   let blink = 0
   const target = new THREE.Vector2()
@@ -665,8 +667,8 @@ export function createChibi(id: CompanionId, reducedMotion = false): Chibi {
   return {
     id,
     root,
-    wave: () => { if (!reducedMotion) hop = 1 },
-    celebrate: () => { if (!reducedMotion) { cheer = 1; hop = 1 } },
+    wave: () => { if (reducedMotion) greet = !greet; else hop = 1 },
+    celebrate: () => { if (reducedMotion) greet = true; else { cheer = 1; hop = 1 } },
     look: (x, y) => target.set(x, y),
     update(t, dt) {
       const time = reducedMotion ? 0 : t + phase
@@ -699,9 +701,9 @@ export function createChibi(id: CompanionId, reducedMotion = false): Chibi {
       arms.forEach((a, i) => {
         const side = i === 0 ? 1 : -1
         const r = restArm[i]
-        const raise = Math.max(cheer > 0 ? Math.min(1, cheer * 3) : 0, hop > 0 ? h * 0.6 : 0)
+        const raise = greet ? 1 : Math.max(cheer > 0 ? Math.min(1, cheer * 3) : 0, hop > 0 ? h * 0.6 : 0)
         a.arm.rotation.x = r.x * (1 - raise) + Math.sin(time * 1.8 + i) * 0.03
-        a.arm.rotation.z = r.z + (side * 2.6 - r.z) * raise + Math.sin(time * 1.8 + i * 2) * 0.03 + (raise > 0 ? Math.sin(t * 14) * 0.18 * raise : 0)
+        a.arm.rotation.z = r.z + (side * 2.6 - r.z) * raise + Math.sin(time * 1.8 + i * 2) * 0.03 + (raise > 0 && !greet ? Math.sin(t * 14) * 0.18 * raise : 0)
       })
     },
   }
