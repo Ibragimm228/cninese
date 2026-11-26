@@ -1,8 +1,10 @@
 import clsx from 'clsx'
 import { motion } from 'framer-motion'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { PageHeader } from '../components/AppShell'
 import { Button } from '../components/Button'
+import { CompanionPicker } from '../components/Companion'
 import { BoltIcon, FlameIcon, GemIcon, SnowIcon, TrophyIcon } from '../components/icons'
 import { achievements } from '../data/achievements'
 import { lessons } from '../data/curriculum'
@@ -15,6 +17,10 @@ export default function Profile() {
   const s = useApp()
   const [name, setName] = useState(s.name)
   const [confirmReset, setConfirmReset] = useState(false)
+  const { hash } = useLocation()
+  useEffect(() => {
+    if (hash === '#companions') document.getElementById('companions')?.scrollIntoView()
+  }, [hash])
   const days = lastNDays(7)
   const max = Math.max(s.dailyGoal, ...days.map((d) => s.xpByDay[d] ?? 0))
   const done = Object.keys(s.lessons).length
@@ -27,6 +33,7 @@ export default function Profile() {
   return (
     <div className="mx-auto max-w-[1000px] px-4 pt-6 md:px-8 md:pt-10">
       <PageHeader kicker="我 · Профиль" title={s.name} />
+      <CompanionPicker />
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {stats.map((x, i) => (
           <motion.div key={x.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }} className="flex items-center gap-3 rounded-3xl border-2 border-paper-3 bg-[#fffdf8] p-4">

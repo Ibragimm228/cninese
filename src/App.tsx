@@ -1,5 +1,6 @@
-import { lazy, Suspense } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { lazy, Suspense, useLayoutEffect } from 'react'
+import { MotionConfig } from 'framer-motion'
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
 import { AppShell } from './components/AppShell'
 import Learn from './pages/Learn'
 
@@ -22,10 +23,15 @@ function Loader() {
   )
 }
 
-export default function App() {
+function AppRoutes() {
+  const { pathname, hash } = useLocation()
+
+  useLayoutEffect(() => {
+    if (!hash) window.scrollTo(0, 0)
+  }, [pathname, hash])
+
   return (
-    <BrowserRouter>
-      <Suspense fallback={<Loader />}>
+    <Suspense fallback={<Loader />}>
       <Routes>
         <Route path="/" element={<Landing />} />
         <Route path="/welcome" element={<Welcome />} />
@@ -37,12 +43,21 @@ export default function App() {
           <Route path="/characters" element={<Characters />} />
           <Route path="/tones" element={<Tones />} />
           <Route path="/exam" element={<Exam />} />
-              <Route path="/league" element={<League />} />
+          <Route path="/league" element={<League />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      </Suspense>
-    </BrowserRouter>
+    </Suspense>
+  )
+}
+
+export default function App() {
+  return (
+    <MotionConfig reducedMotion="user">
+      <BrowserRouter>
+        <AppRoutes />
+      </BrowserRouter>
+    </MotionConfig>
   )
 }

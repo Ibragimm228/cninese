@@ -3,7 +3,6 @@ import { achievements } from '../data/achievements'
 import { lastNDays, weekdayShort } from '../lib/date'
 import { useApp, todayXp } from '../lib/store'
 import { BoltIcon, FlameIcon, GemIcon, SnowIcon } from './icons'
-import { StatChips } from './StatChips'
 
 export function RightRail() {
   const s = useApp()
@@ -12,9 +11,7 @@ export function RightRail() {
   const days = lastNDays(7)
   const unlocked = achievements.filter((a) => s.achievements[a.id])
   return (
-    <aside className="sticky top-6 hidden w-[340px] shrink-0 flex-col gap-5 lg:flex">
-      <StatChips className="justify-end" />
-
+    <aside className="right-rail hidden w-[310px] shrink-0 flex-col gap-4 lg:flex" aria-label="Прогресс обучения">
       <section className="rounded-3xl border-2 border-paper-3 bg-[#fffdf8] p-5">
         <div className="mb-4 flex items-center justify-between">
           <h3 className="font-display text-base font-bold">Цель дня</h3>

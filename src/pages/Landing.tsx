@@ -1,8 +1,8 @@
 import clsx from 'clsx'
-import { AnimatePresence, motion, useInView, useMotionValue, useScroll, useSpring, useTransform, type MotionValue } from 'framer-motion'
+import { AnimatePresence, motion, useInView, useMotionValue, useReducedMotion, useScroll, useSpring, useTransform, type MotionValue } from 'framer-motion'
 import { useEffect, useRef, useState } from 'react'
 import { Link, useNavigate } from 'react-router-dom'
-import { Cursor } from '../components/Cursor'
+import { CompanionArt } from '../components/Companion'
 import { HanziWriterBox } from '../components/HanziWriterBox'
 import { ArrowRight, ArrowUpRight, CheckIcon, FlameIcon, HeartIcon, SparkIcon, SpeakerIcon } from '../components/icons'
 import { Logo } from '../components/Logo'
@@ -11,6 +11,7 @@ import { TONE_INFO } from '../lib/pinyin'
 import { speak } from '../lib/speech'
 import { useApp } from '../lib/store'
 import { PitchTrainer } from '../components/PitchTrainer'
+import { companions } from '../data/companions'
 import { mnemonics } from '../data/mnemonics'
 import { useLenis } from '../lib/useLenis'
 
@@ -18,22 +19,10 @@ const EASE = [0.16, 1, 0.3, 1] as const
 
 export default function Landing() {
   useLenis()
-  const [loading, setLoading] = useState(() => !sessionStorage.getItem('moli-intro'))
-  useEffect(() => {
-    if (!loading) return
-    const t = setTimeout(() => {
-      sessionStorage.setItem('moli-intro', '1')
-      setLoading(false)
-    }, 1900)
-    return () => clearTimeout(t)
-  }, [loading])
-
   return (
-    <div className="grain relative bg-paper text-ink">
-      <Cursor />
-      <AnimatePresence>{loading && <Preloader />}</AnimatePresence>
+    <div className="relative bg-paper text-ink">
       <TopNav />
-      <Hero ready={!loading} />
+      <Hero />
       <MarqueeBand />
       <Manifesto />
       <WhyUs />
@@ -49,45 +38,6 @@ export default function Landing() {
   )
 }
 
-function Preloader() {
-  const [n, setN] = useState(0)
-  useEffect(() => {
-    let raf = 0
-    const start = performance.now()
-    const tick = (t: number) => {
-      const p = Math.min(1, (t - start) / 1500)
-      setN(Math.round((1 - Math.pow(1 - p, 3)) * 100))
-      if (p < 1) raf = requestAnimationFrame(tick)
-    }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [])
-  return (
-    <motion.div
-      className="fixed inset-0 z-[90] flex flex-col justify-between bg-ink p-6 text-paper md:p-10"
-      exit={{ clipPath: 'inset(0 0 100% 0)' }}
-      initial={{ clipPath: 'inset(0 0 0% 0)' }}
-      transition={{ duration: 0.9, ease: EASE }}
-    >
-      <div className="flex justify-between font-display text-xs uppercase tracking-[0.3em] text-paper/60">
-        <span>Mòlì · 茉莉</span>
-        <span>Загрузка иероглифов</span>
-      </div>
-      <motion.span
-        initial={{ opacity: 0, scale: 0.8, filter: 'blur(20px)' }}
-        animate={{ opacity: 1, scale: 1, filter: 'blur(0px)' }}
-        transition={{ duration: 1.2, ease: EASE }}
-        className="self-center font-brush text-[38vw] leading-none text-red md:text-[22vw]"
-      >
-        学
-      </motion.span>
-      <div className="flex items-end justify-between">
-        <span className="max-w-[16rem] font-serif text-xl italic text-paper/70">xué — учиться, изучать</span>
-        <span className="font-display text-7xl font-bold tabular-nums md:text-9xl">{n}</span>
-      </div>
-    </motion.div>
-  )
-}
 
 function TopNav() {
   const { scrollY } = useScroll()
@@ -121,7 +71,6 @@ function TopNav() {
         </nav>
         <Link
           to={onboarded ? '/learn' : '/welcome'}
-          data-cursor=""
           className="group flex items-center gap-2 rounded-full bg-ink px-5 py-2.5 font-display text-[13px] font-semibold uppercase tracking-wider text-paper transition-colors hover:bg-red"
         >
           {onboarded ? 'Продолжить' : 'Начать'}
@@ -132,23 +81,10 @@ function TopNav() {
   )
 }
 
-function RevealLine({ children, delay = 0, ready, className }: { children: React.ReactNode; delay?: number; ready: boolean; className?: string }) {
-  return (
-    <span className={clsx('block overflow-hidden pb-[0.08em]', className)}>
-      <motion.span
-        className="block"
-        initial={{ y: '110%', rotate: 3 }}
-        animate={ready ? { y: '0%', rotate: 0 } : undefined}
-        transition={{ duration: 1.1, delay, ease: EASE }}
-      >
-        {children}
-      </motion.span>
-    </span>
-  )
-}
 
 function Magnetic({ children, className }: { children: React.ReactNode; className?: string }) {
   const ref = useRef<HTMLDivElement>(null)
+  const reduceMotion = useReducedMotion()
   const x = useMotionValue(0)
   const y = useMotionValue(0)
   const sx = useSpring(x, { damping: 15, stiffness: 150 })
@@ -159,6 +95,7 @@ function Magnetic({ children, className }: { children: React.ReactNode; classNam
       className={className}
       style={{ x: sx, y: sy }}
       onPointerMove={(e) => {
+        if (reduceMotion) return
         const r = ref.current!.getBoundingClientRect()
         x.set((e.clientX - r.left - r.width / 2) * 0.3)
         y.set((e.clientY - r.top - r.height / 2) * 0.3)
@@ -173,156 +110,50 @@ function Magnetic({ children, className }: { children: React.ReactNode; classNam
   )
 }
 
-const FLOATING = [
-  { h: '你好', p: 'nǐ hǎo', r: 'привет', x: '55%', y: '52%', rot: -8, d: 0.9 },
-  { h: '茶', p: 'chá', r: 'чай', x: '76%', y: '70%', rot: 6, d: 1.1 },
-  { h: '爱', p: 'ài', r: 'любить', x: '84%', y: '16%', rot: 10, d: 1.3 },
+const FLASHCARDS = [
+  { h: '你好', p: 'nǐ hǎo', r: 'привет' },
+  { h: '茶', p: 'chá', r: 'чай' },
+  { h: '爱', p: 'ài', r: 'любить' },
 ]
 
-function Hero({ ready }: { ready: boolean }) {
-  const navigate = useNavigate()
+function Hero() {
   const onboarded = useApp((s) => s.onboarded)
-  const ref = useRef<HTMLElement>(null)
-  const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end start'] })
-  const yBig = useTransform(scrollYProgress, [0, 1], ['0%', '35%'])
-  const rotBig = useTransform(scrollYProgress, [0, 1], [0, -12])
-  const yText = useTransform(scrollYProgress, [0, 1], ['0%', '-20%'])
-  const mx = useMotionValue(0)
-  const my = useMotionValue(0)
-  const smx = useSpring(mx, { damping: 30, stiffness: 80 })
-  const smy = useSpring(my, { damping: 30, stiffness: 80 })
-
   return (
-    <section
-      ref={ref}
-      className="relative flex min-h-[100svh] flex-col justify-end overflow-hidden px-5 pb-10 pt-32 md:px-10 md:pb-14"
-      onPointerMove={(e) => {
-        mx.set(e.clientX / window.innerWidth - 0.5)
-        my.set(e.clientY / window.innerHeight - 0.5)
-      }}
-    >
-      <motion.div
-        style={{ y: yBig, rotate: rotBig }}
-        className="pointer-events-none absolute -right-[8vw] top-[6vh] select-none md:right-[2vw] md:top-[4vh]"
-        aria-hidden
-      >
-        <motion.span
-          initial={{ opacity: 0, scale: 1.2, filter: 'blur(30px)' }}
-          animate={ready ? { opacity: 1, scale: 1, filter: 'blur(0px)' } : undefined}
-          transition={{ duration: 1.6, ease: EASE }}
-          className="block font-brush text-[78vw] leading-[0.8] text-red md:text-[46vw]"
-        >
-          学
-        </motion.span>
-      </motion.div>
-
-      {FLOATING.map((f) => (
-        <FloatCard key={f.h} f={f} mx={smx} my={smy} ready={ready} />
-      ))}
-
-      <motion.div
-        initial={{ opacity: 0, scale: 0.6 }}
-        animate={ready ? { opacity: 1, scale: 1 } : undefined}
-        transition={{ delay: 1.2, duration: 0.8, ease: EASE }}
-        className="absolute left-[52%] top-[22%] hidden md:block"
-      >
-        <SealBadge />
-      </motion.div>
-
-      <motion.div style={{ y: yText }} className="relative z-10 mx-auto w-full max-w-[1500px]">
-        <motion.p
-          initial={{ opacity: 0, y: 10 }}
-          animate={ready ? { opacity: 1, y: 0 } : undefined}
-          transition={{ delay: 0.2, duration: 0.8 }}
-          className="mb-6 flex items-center gap-3 font-display text-xs font-medium uppercase tracking-[0.3em] md:text-sm"
-        >
-          <span className="h-px w-10 bg-ink" /> Китайский язык · HSK 1 · бесплатно
-        </motion.p>
-        <h1 className="font-display text-[15vw] font-bold leading-[0.88] tracking-[-0.04em] md:text-[9.6vw]">
-          <RevealLine ready={ready} delay={0.1}>
-            Говори
-          </RevealLine>
-          <RevealLine ready={ready} delay={0.2}>
-            <span className="inline-flex items-center gap-[0.15em]">
-              по
-              <span className="inline-flex items-center rounded-full bg-ink px-[0.4em] pb-[0.14em] pt-[0.1em] align-middle font-hanzi text-[0.55em] font-black leading-none tracking-normal text-paper">
-                中文
-              </span>
-            </span>
-          </RevealLine>
-          <RevealLine ready={ready} delay={0.3}>
-            <span className="font-serif font-medium italic tracking-[-0.02em] text-red">играючи</span>
-          </RevealLine>
-        </h1>
-        <div className="mt-10 flex flex-col gap-8 md:mt-14 md:flex-row md:items-end md:justify-between">
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={ready ? { opacity: 1, y: 0 } : undefined}
-            transition={{ delay: 0.7, duration: 0.9, ease: EASE }}
-            className="max-w-md text-lg leading-relaxed text-ink-2 md:text-xl"
-          >
-            Короткие уроки-игры, тренажёр тонов, рисование иероглифов и умные повторения. Пять минут в день — и через месяц ты
-            заговоришь.
-          </motion.p>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={ready ? { opacity: 1, y: 0 } : undefined}
-            transition={{ delay: 0.85, duration: 0.9, ease: EASE }}
-            className="flex flex-wrap items-center gap-4"
-          >
-            <Magnetic>
-              <button
-                data-cursor="Вперёд"
-                onClick={() => navigate(onboarded ? '/learn' : '/welcome')}
-                className="group relative flex items-center gap-4 overflow-hidden rounded-full bg-red py-5 pl-8 pr-5 font-display text-sm font-semibold uppercase tracking-wider text-paper md:text-base"
-              >
-                <span className="absolute inset-0 translate-y-full rounded-full bg-ink transition-transform duration-500 ease-[cubic-bezier(.16,1,.3,1)] group-hover:translate-y-0" />
-                <span className="relative">{onboarded ? 'Продолжить обучение' : 'Начать бесплатно'}</span>
-                <span className="relative grid size-10 place-items-center rounded-full bg-paper text-ink transition-transform duration-500 group-hover:rotate-[-45deg]">
-                  <ArrowRight size={20} />
-                </span>
-              </button>
-            </Magnetic>
-            <a href="#method" className="font-display text-sm font-semibold uppercase tracking-wider underline decoration-2 underline-offset-8 hover:text-red">
-              Как это работает
-            </a>
-          </motion.div>
+    <section className="landing-hero">
+      <div className="landing-edition studio-label"><span><span className="status-dot" /> Языковая студия</span><span>ВЫПУСК 01 / <span className="font-hanzi">中文</span></span></div>
+      <div className="landing-layout">
+        <div className="landing-copy">
+          <p className="studio-label landing-level">HSK 1 · С НУЛЯ · БЕСПЛАТНО</p>
+          <h1>Китайский.<br />С нуля<span>.</span></h1>
+          <p className="landing-script">Играя, каждый день.</p>
+          <p className="landing-description">Короткие уроки, живые тоны и первые иероглифы. Собирай серию вместе с аниме-спутником.</p>
+          <div className="landing-actions">
+            <Link to={onboarded ? '/learn' : '/welcome'} className="editorial-cta">
+              {onboarded ? 'Продолжить обучение' : 'Начать бесплатно'} <span><ArrowRight size={18} /></span>
+            </Link>
+            <a href="#method">Как это работает <ArrowUpRight size={15} /></a>
+          </div>
         </div>
-      </motion.div>
+        <div className="landing-visual">
+          <div className="landing-poster">
+            <p className="studio-label"><span className="status-dot" /> КЛУБ СЕРИИ</p>
+            <span className="landing-poster-orbit" aria-hidden="true" />
+            <span className="landing-poster-glyph" aria-hidden="true">伴</span>
+            {companions.slice(0, 3).map((companion) => <CompanionArt key={companion.id} companion={companion} className={`poster-pet poster-pet--${companion.id}`} />)}
+            <span className="poster-spark" aria-hidden="true"><SparkIcon size={38} /></span>
+            <div className="landing-poster-caption"><span>ТВОИ АНИМЕ-СПУТНИКИ</span><span>01—04</span></div>
+          </div>
+          <div className="landing-words" aria-label="Послушай первые слова">
+            {FLASHCARDS.map((word) => (
+              <button key={word.h} type="button" onClick={() => void speak(word.h)} aria-label={`Послушать: ${word.h} — ${word.r}`}>
+                <span className="font-hanzi">{word.h}</span><span><strong>{word.p}</strong><small>{word.r}</small></span><SpeakerIcon size={15} />
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div className="landing-footer-line studio-label"><span>01 / ПЕРВЫЙ ШАГ</span><span>С УРОКА НАЧИНАЕТСЯ СЕРИЯ ↓</span></div>
     </section>
-  )
-}
-
-function FloatCard({
-  f,
-  mx,
-  my,
-  ready,
-}: {
-  f: (typeof FLOATING)[number]
-  mx: MotionValue<number>
-  my: MotionValue<number>
-  ready: boolean
-}) {
-  const x = useTransform(mx, (v) => v * 60 * f.d)
-  const y = useTransform(my, (v) => v * 60 * f.d)
-  return (
-    <motion.button
-      data-cursor="Слушать"
-      onClick={() => void speak(f.h)}
-      className="absolute z-20 hidden rounded-2xl border-2 border-ink bg-paper px-4 py-3 text-left shadow-[6px_6px_0_#121110] lg:block"
-      style={{ left: f.x, top: f.y, x, y, rotate: f.rot }}
-      initial={{ opacity: 0, scale: 0.5 }}
-      animate={ready ? { opacity: 1, scale: 1 } : undefined}
-      transition={{ delay: 1 + f.d * 0.3, type: 'spring', damping: 14 }}
-      whileHover={{ scale: 1.08, rotate: 0 }}
-    >
-      <span className="block text-xs text-ink-soft">{f.p}</span>
-      <span className="block font-hanzi text-3xl font-black">{f.h}</span>
-      <span className="mt-0.5 flex items-center gap-1 text-xs font-semibold text-red">
-        <SpeakerIcon size={12} /> {f.r}
-      </span>
-    </motion.button>
   )
 }
 
@@ -441,25 +272,26 @@ const FEATURES = [
 
 function Features() {
   const ref = useRef<HTMLDivElement>(null)
+  const reduceMotion = useReducedMotion()
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start start', 'end end'] })
   const x = useTransform(scrollYProgress, [0, 1], ['0%', '-75%'])
   return (
-    <section ref={ref} className="relative h-[400vh] bg-ink text-paper">
-      <div className="sticky top-0 flex h-[100svh] flex-col overflow-hidden">
+    <section ref={ref} className={clsx('relative bg-ink text-paper', !reduceMotion && 'h-[400vh]')}>
+      <div className={clsx('flex flex-col overflow-hidden', !reduceMotion && 'sticky top-0 h-[100svh]')}>
         <div className="mx-auto flex w-full max-w-[1500px] items-end justify-between px-5 pt-24 md:px-10 md:pt-28">
           <h2 className="font-display text-4xl font-bold tracking-tight md:text-7xl">
             Четыре <span className="font-serif font-medium italic text-red">столпа</span>
           </h2>
-          <div className="hidden w-60 md:block">
+          {!reduceMotion && <div className="hidden w-60 md:block">
             <p className="mb-2 font-display text-xs uppercase tracking-[0.3em] text-paper/50">(03) — Метод</p>
             <div className="h-[2px] w-full bg-paper/15">
               <motion.div className="h-full origin-left bg-red" style={{ scaleX: scrollYProgress }} />
             </div>
-          </div>
+          </div>}
         </div>
-        <motion.div style={{ x }} className="flex h-full w-[400%] items-center">
+        <motion.div style={reduceMotion ? undefined : { x }} className={clsx('flex items-center', reduceMotion ? 'flex-col gap-4 py-6' : 'h-full w-[400%]')}>
           {FEATURES.map((f) => (
-            <div key={f.n} className="flex h-full w-1/4 items-center px-5 md:px-10">
+            <div key={f.n} className={clsx('flex items-center px-5 md:px-10', reduceMotion ? 'w-full max-w-[1500px]' : 'h-full w-1/4')}>
               <div className="relative grid h-[68svh] w-full grid-rows-[auto_1fr] overflow-hidden rounded-[36px] p-7 text-ink md:grid-cols-2 md:grid-rows-1 md:p-12" style={{ background: f.bg }}>
                 <span className="pointer-events-none absolute -bottom-16 -left-6 select-none font-brush text-[50vw] leading-none text-black/10 md:text-[28vw]">
                   {f.hanzi}
@@ -588,7 +420,6 @@ function TonesDemo() {
           {TONE_INFO.map((t, i) => (
             <motion.button
               key={t.n}
-              data-cursor="Слушать"
               onClick={() => {
                 setActive(i)
                 void speak(TONE_WORDS[i].h, 0.7)
@@ -704,7 +535,7 @@ function StrokeDemo() {
           </div>
         </div>
         <div className="flex flex-col items-center">
-          <div className="relative rounded-[36px] bg-[#fffdf8] p-5 shadow-[16px_16px_0_#121110]" data-cursor={quiz ? 'Пиши' : ''}>
+          <div className="relative rounded-[36px] bg-[#fffdf8] p-5 shadow-[16px_16px_0_#121110]">
             <HanziWriterBox key={`${ch.c}-${quiz}`} char={ch.c} size={Math.min(380, typeof window !== 'undefined' ? window.innerWidth - 80 : 380)} mode={quiz ? 'quiz' : 'animate'} loop={!quiz} onQuizComplete={() => setDone(true)} />
             <AnimatePresence>
               {done && (
@@ -807,6 +638,7 @@ function Numbers() {
 
 function FinalCta() {
   const navigate = useNavigate()
+  const reduceMotion = useReducedMotion()
   const onboarded = useApp((s) => s.onboarded)
   const ref = useRef<HTMLElement>(null)
   const { scrollYProgress } = useScroll({ target: ref, offset: ['start end', 'end end'] })
@@ -814,7 +646,7 @@ function FinalCta() {
   const radius = useTransform(scrollYProgress, [0, 1], [120, 0])
   return (
     <section ref={ref} className="px-0">
-      <motion.div style={{ scale, borderRadius: radius }} className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden bg-red px-5 text-center text-paper">
+      <motion.div style={reduceMotion ? undefined : { scale, borderRadius: radius }} className="relative flex min-h-[100svh] flex-col items-center justify-center overflow-hidden bg-red px-5 text-center text-paper">
         <div className="marquee absolute top-10 gap-8 opacity-25" style={{ ['--marquee-speed' as string]: '30s' }}>
           {Array.from({ length: 2 }).flatMap((_, k) =>
             ['加油', '学习', '中文', '每天', '进步'].map((w) => (
@@ -835,7 +667,6 @@ function FinalCta() {
         </div>
         <Magnetic className="mt-12">
           <button
-            data-cursor="Го!"
             onClick={() => navigate(onboarded ? '/learn' : '/welcome')}
             className="grid size-44 place-items-center rounded-full bg-paper font-display text-sm font-bold uppercase tracking-wider text-ink transition-transform duration-500 hover:scale-110 md:size-56 md:text-base"
           >

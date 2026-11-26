@@ -1,6 +1,7 @@
 import { create } from 'zustand'
 import { persist } from 'zustand/middleware'
 import { achievements } from '../data/achievements'
+import type { CompanionId } from '../data/companions'
 import { addDays, dayKey } from './date'
 import { review, type WordProgress } from './srs'
 
@@ -30,6 +31,7 @@ export type AppState = {
   name: string
   onboarded: boolean
   dailyGoal: number
+  companionId: CompanionId
   xp: number
   xpByDay: Record<string, number>
   streak: number
@@ -66,6 +68,7 @@ type Actions = {
   setName: (name: string) => void
   finishOnboarding: (goal: number) => void
   setDailyGoal: (goal: number) => void
+  setCompanion: (id: CompanionId) => void
   setSettings: (s: Partial<Settings>) => void
   recordWord: (wordId: string, ok: boolean) => void
   loseHeart: () => void
@@ -82,6 +85,7 @@ const initial: AppState = {
   name: 'Ученик',
   onboarded: false,
   dailyGoal: 30,
+  companionId: 'chrollo',
   xp: 0,
   xpByDay: {},
   streak: 0,
@@ -117,6 +121,7 @@ export const useApp = create<AppState & Actions>()(
       setName: (name) => set({ name: name.trim() || 'Ученик' }),
       finishOnboarding: (goal) => set({ onboarded: true, dailyGoal: goal }),
       setDailyGoal: (dailyGoal) => set({ dailyGoal }),
+      setCompanion: (companionId) => set({ companionId }),
       setSettings: (s) => set((st) => ({ settings: { ...st.settings, ...s } })),
       recordWord: (wordId, ok) =>
         set((st) => ({

@@ -1,9 +1,10 @@
 import confetti from 'canvas-confetti'
 import clsx from 'clsx'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { Button } from '../components/Button'
+import { CompanionCelebration } from '../components/Companion'
 import { ExerciseView, type ExResult } from '../components/exercises'
 import { BoltIcon, CheckIcon, CloseIcon, FlameIcon, GemIcon, HeartIcon } from '../components/icons'
 import { achievements } from '../data/achievements'
@@ -68,6 +69,7 @@ function LessonPlayer({
 }) {
   const navigate = useNavigate()
   const { hearts, loseHeart, recordWord, completeLesson, refillHearts, gems } = useApp()
+  const reduceMotion = useReducedMotion()
   const [queue, setQueue] = useState(exercises)
   const [idx, setIdx] = useState(0)
   const [pending, setPending] = useState<ExResult | null>(null)
@@ -96,6 +98,7 @@ function LessonPlayer({
     setOutcome(o)
     setPhase('results')
     sfx.complete()
+    if (reduceMotion) return
     const end = Date.now() + 900
     const colors = ['#e63b2e', '#f2b33d', '#22a06b', '#3d7bf7']
     ;(function frame() {
@@ -103,7 +106,7 @@ function LessonPlayer({
       confetti({ particleCount: 5, angle: 120, spread: 70, origin: { x: 1, y: 0.7 }, colors })
       if (Date.now() < end) requestAnimationFrame(frame)
     })()
-  }, [completeLesson, lessonId, xp, answered, correct])
+  }, [completeLesson, lessonId, xp, answered, correct, reduceMotion])
 
   const next = useCallback(() => {
     setChecked(null)
@@ -434,7 +437,8 @@ function Results({
               {acc === 100 ? 'Идеально! Без ошибок' : 'Урок пройден!'}
             </motion.h1>
             <p className="mt-2 text-ink-soft">bàng — «отлично, класс!»</p>
-            <div className="mt-10 grid w-full grid-cols-3 gap-3">
+            <CompanionCelebration outcome={outcome} />
+            <div className="mt-3 grid w-full grid-cols-3 gap-3">
               {[
                 { label: 'Опыт', value: `+${xp}`, color: '#f2b33d', icon: <BoltIcon size={20} /> },
                 { label: 'Точность', value: `${acc}%`, color: '#22a06b', icon: <CheckIcon size={20} className="text-white" /> },
