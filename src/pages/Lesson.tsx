@@ -412,7 +412,10 @@ function Results({
 }) {
   const streak = useApp((s) => s.streak)
   useEffect(() => {
-    const h = (e: KeyboardEvent) => e.key === 'Enter' && onNext()
+    const h = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter' || (e.target as Element | null)?.closest?.('button, a, [role="dialog"]')) return
+      onNext()
+    }
     window.addEventListener('keydown', h)
     return () => window.removeEventListener('keydown', h)
   }, [onNext])
@@ -453,7 +456,7 @@ function Results({
                   style={{ borderColor: s.color, background: s.color }}
                 >
                   <p className="flex items-center justify-center gap-1 py-1.5 text-[11px] font-bold uppercase tracking-widest text-white">{s.label}</p>
-                  <p className="flex items-center justify-center gap-1.5 rounded-xl bg-card py-4 font-display text-xl font-bold" style={{ color: s.color }}>
+                  <p className="flex items-center justify-center gap-1.5 rounded-xl bg-paper py-4 font-display text-xl font-bold" style={{ color: s.color }}>
                     {s.value}
                   </p>
                 </motion.div>
