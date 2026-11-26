@@ -665,8 +665,8 @@ export function createChibi(id: CompanionId, reducedMotion = false): Chibi {
   return {
     id,
     root,
-    wave: () => { hop = 1 },
-    celebrate: () => { cheer = 1; hop = 1 },
+    wave: () => { if (!reducedMotion) hop = 1 },
+    celebrate: () => { if (!reducedMotion) { cheer = 1; hop = 1 } },
     look: (x, y) => target.set(x, y),
     update(t, dt) {
       const time = reducedMotion ? 0 : t + phase
