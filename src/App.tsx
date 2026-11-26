@@ -1,6 +1,6 @@
 import { lazy, Suspense, useLayoutEffect } from 'react'
 import { MotionConfig } from 'framer-motion'
-import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom'
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigationType } from 'react-router-dom'
 import { AppShell } from './components/AppShell'
 import Learn from './pages/Learn'
 
@@ -25,10 +25,11 @@ function Loader() {
 
 function AppRoutes() {
   const { pathname, hash } = useLocation()
+  const navigationType = useNavigationType()
 
   useLayoutEffect(() => {
-    if (!hash) window.scrollTo(0, 0)
-  }, [pathname, hash])
+    if (navigationType !== 'POP' && !hash) window.scrollTo(0, 0)
+  }, [pathname, hash, navigationType])
 
   return (
     <Suspense fallback={<Loader />}>
