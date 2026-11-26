@@ -208,7 +208,11 @@ html.lenis body {
 .editorial-cta:hover span { transform: rotate(-32deg); }
 .editorial-cta:active { transform: translateY(1px); }
 
-.app-shell { --sidebar-width: 0px; background: var(--color-paper); }
+.app-shell {
+  --sidebar-width: 0px;
+  --app-topbar-height: 4.1rem;
+  background: var(--color-paper);
+}
 .app-sidebar { display: none; }
 .app-main { margin-left: var(--sidebar-width); }
 .app-topbar {
@@ -218,7 +222,7 @@ html.lenis body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  min-height: 4.1rem;
+  height: var(--app-topbar-height);
   padding: .6rem clamp(.85rem, 3vw, 2.6rem);
   border-bottom: 1px solid var(--studio-rule);
   background: color-mix(in srgb, var(--color-paper) 92%, transparent);

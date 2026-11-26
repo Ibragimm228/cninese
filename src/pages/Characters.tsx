@@ -32,7 +32,7 @@ export default function Characters() {
           Изучено <span className="text-2xl text-ink">{learned}</span> / {total}
         </div>
       </PageHeader>
-      <div className="sticky top-[60px] z-10 -mx-4 mb-8 flex flex-col gap-3 bg-paper/90 px-4 py-3 backdrop-blur md:top-0 md:flex-row">
+      <div className="sticky top-[var(--app-topbar-height)] z-10 -mx-4 mb-8 flex flex-col gap-3 bg-paper/90 px-4 py-3 backdrop-blur md:flex-row">
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
