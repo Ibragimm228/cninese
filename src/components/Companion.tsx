@@ -74,6 +74,7 @@ export function CompanionCelebration({ outcome }: { outcome: CompletionOutcome }
 function ShareCard({ companion }: { companion: Companion }) {
   const [url, setUrl] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  const [failed, setFailed] = useState(false)
   useEffect(() => {
     if (!url) return
     const close = (e: KeyboardEvent) => e.key === 'Escape' && setUrl(null)
@@ -86,10 +87,13 @@ function ShareCard({ companion }: { companion: Companion }) {
 
   const make = async () => {
     setBusy(true)
+    setFailed(false)
     try {
       const s = useApp.getState()
       const { drawShareCard } = await import('../lib/shareCard')
       setUrl(await drawShareCard({ companion, name: s.name, streak: s.streak, xp: s.xp, words: learnedWords(s).length, tier: auraTier(s.streak) }))
+    } catch {
+      setFailed(true)
     } finally {
       setBusy(false)
     }
@@ -97,7 +101,7 @@ function ShareCard({ companion }: { companion: Companion }) {
 
   return (
     <>
-      <button type="button" className="pet-share" onClick={make} disabled={busy} aria-label="Создать карточку серии" title="Карточка серии">{busy ? '…' : '✦ Карточка'}</button>
+      <button type="button" className="pet-share" onClick={make} disabled={busy} aria-label="Создать карточку серии" title="Карточка серии">{busy ? '…' : failed ? 'Не вышло' : '✦ Карточка'}</button>
       {url && createPortal(
         <div className="share-sheet" role="dialog" aria-modal="true" aria-label="Карточка серии" onClick={() => setUrl(null)}>
           <img src={url} alt={`Карточка серии: ${companion.name}`} onClick={(e) => e.stopPropagation()} />

@@ -16,7 +16,7 @@ function image(src: string) {
 export async function drawShareCard(o: { companion: Companion; name: string; streak: number; xp: number; words: number; tier: number }) {
   const { portrait } = await import('../three/stage')
   await document.fonts.ready
-  const hero = await image(await portrait(o.companion.id, 1024, o.tier))
+  const hero = await portrait(o.companion.id, 1024, o.tier).then(image).catch(() => null)
   const canvas = document.createElement('canvas')
   canvas.width = W
   canvas.height = H
@@ -49,7 +49,7 @@ export async function drawShareCard(o: { companion: Companion; name: string; str
   c.textAlign = 'center'
   c.fillText(glyph, W / 2, 900)
 
-  c.drawImage(hero, (W - 1000) / 2, 190, 1000, 1000)
+  if (hero) c.drawImage(hero, (W - 1000) / 2, 190, 1000, 1000)
 
   c.fillStyle = ink
   c.textAlign = 'left'
