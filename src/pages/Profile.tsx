@@ -78,12 +78,12 @@ export default function Profile() {
         </div>
       </section>
 
-      <section className="mt-8 grid gap-6 md:grid-cols-2">
+      <section className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">
         <div className="rounded-3xl border-2 border-paper-3 bg-[#fffdf8] p-6">
           <h2 className="font-display text-lg font-bold">Настройки</h2>
           <label className="mt-5 block text-sm font-semibold text-ink-soft">Имя</label>
           <div className="mt-1 flex gap-2">
-            <input value={name} onChange={(e) => setName(e.target.value)} maxLength={24} className="flex-1 rounded-xl border-2 border-paper-3 px-4 py-2.5 outline-none focus:border-sky" />
+            <input value={name} onChange={(e) => setName(e.target.value)} maxLength={24} className="min-w-0 flex-1 rounded-xl border-2 border-paper-3 px-4 py-2.5 outline-none focus:border-sky" />
             <Button variant="ink" className="px-4 py-2.5" onClick={() => s.setName(name)}>OK</Button>
           </div>
           <label className="mt-5 block text-sm font-semibold text-ink-soft">Цель дня</label>

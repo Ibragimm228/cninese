@@ -192,9 +192,11 @@ function MarqueeBand() {
     </div>
   )
   return (
-    <section className="relative z-10 -rotate-2 scale-105 overflow-hidden bg-ink text-paper">
-      {row()}
-    </section>
+    <div className="overflow-x-clip">
+      <section className="relative z-10 -rotate-2 scale-105 overflow-hidden bg-ink text-paper">
+        {row()}
+      </section>
+    </div>
   )
 }
 
