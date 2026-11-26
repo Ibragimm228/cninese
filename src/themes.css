@@ -237,3 +237,5 @@ html[data-theme="manga"] .stage-enter { border: 3px solid #2b1055; background: #
 html[data-theme="manga"] .stage-cta { border: 3px solid #2b1055; background: #ff3d8b; color: #fff; box-shadow: 0 7px 0 #2b1055; font-weight: 400; }
 html[data-theme="manga"] .stage-cta span { border: 3px solid #2b1055; background: #ffe14d; }
 html[data-theme="manga"] .stage-ticker { border-top: 3px solid #2b1055; background: #ffe14d; font-family: var(--font-display); letter-spacing: .06em; }
+
+html[data-theme="void"] .writer-pad { background: #f3f0ff; }

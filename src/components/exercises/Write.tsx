@@ -16,7 +16,7 @@ export function WriteEx({ ex, onChange }: ExProps<Extract<Exercise, { type: 'wri
     <div>
       <ExTitle badge="Письмо">Нарисуй иероглиф по чертам</ExTitle>
       <div className="flex flex-col items-center gap-6 md:flex-row md:items-start md:gap-10">
-        <div className="rounded-[28px] border-2 border-paper-3 border-b-[6px] bg-card p-3">
+        <div className="rounded-[28px] border-2 border-paper-3 border-b-[6px] bg-card p-3 writer-pad">
           <HanziWriterBox
             ref={ref}
             char={w.hanzi}
