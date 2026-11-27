@@ -5,7 +5,7 @@ mod login_limit;
 mod validate;
 
 use std::{
-    net::SocketAddr,
+    net::{IpAddr, SocketAddr},
     sync::{Arc, Mutex},
     time::{SystemTime, UNIX_EPOCH},
 };
@@ -19,7 +19,7 @@ use axum::{
     http::{header, HeaderMap, Method, StatusCode},
     response::{IntoResponse, Response},
     routing::{get, post},
-    Json, Router,
+    Extension, Json, Router,
 };
 use rand::RngCore;
 use rusqlite::{params, Connection, OptionalExtension};
@@ -142,12 +142,12 @@ async fn register(State(db): State<Db>, Json(c): Json<Credentials>) -> Result<Js
     Ok(Json(Session { token, name }))
 }
 
-async fn login(State(db): State<Db>, ConnectInfo(peer): ConnectInfo<SocketAddr>, Json(c): Json<Credentials>) -> Result<Json<Session>, ApiError> {
+async fn login(State(db): State<Db>, ConnectInfo(peer): ConnectInfo<SocketAddr>, Extension(proxies): Extension<login_limit::TrustedProxies>, headers: HeaderMap, Json(c): Json<Credentials>) -> Result<Json<Session>, ApiError> {
     let name = c.name.trim();
     if !(2..=24).contains(&name.chars().count()) {
         return Err(ApiError(StatusCode::UNAUTHORIZED, "wrong name or password".into()));
     }
-    let key = (peer.ip().to_string(), name.to_ascii_lowercase());
+    let key = (proxies.client_ip(peer.ip(), &headers)?.to_string(), name.to_ascii_lowercase());
     let now = now_ms();
     // the lock is released before the slow password check so it cannot stall other requests
     let row: Option<(i64, String, String)> = {
@@ -256,6 +256,13 @@ async fn main() {
     migrate(&conn).expect("migrate database");
     exam::migrate(&conn).expect("migrate exam history");
     login_limit::migrate(&conn).expect("migrate login limits");
+    let trusted_proxies = match std::env::var("TRUSTED_PROXY") {
+        Ok(value) if !value.trim().is_empty() => value.split(',')
+            .map(|ip| ip.trim().parse::<IpAddr>().map(|ip| ip.to_canonical()))
+            .collect::<Result<Vec<_>, _>>().expect("TRUSTED_PROXY must list IP addresses"),
+        Ok(_) | Err(std::env::VarError::NotPresent) => Vec::new(),
+        Err(e) => panic!("invalid TRUSTED_PROXY: {e}"),
+    };
     let app = Router::new()
         .route("/api/health", get(|| async { "ok" }))
         .route("/api/register", post(register))
@@ -264,6 +271,7 @@ async fn main() {
         .route("/api/progress", get(get_progress).put(put_progress))
         .route("/api/league", get(league))
         .route("/api/exam", get(exam::history).post(exam::record))
+        .layer(Extension(login_limit::TrustedProxies(trusted_proxies)))
         .layer(RequestBodyLimitLayer::new(validate::MAX_SNAPSHOT_BYTES + 4096))
         .layer(CorsLayer::new().allow_origin(Any).allow_methods([Method::GET, Method::POST, Method::PUT]).allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE]))
         .with_state(Arc::new(Mutex::new(conn)));
