@@ -56,12 +56,12 @@ export async function push(): Promise<void> {
   }
 }
 
-/** Takes the server copy when it is further along than this device, otherwise uploads this one. */
+/** Takes the server copy unless this device is further along (a tie goes to the server), otherwise uploads this one. */
 export async function pull(): Promise<void> {
   if (!API || !session()) return
   const { state, updatedAt } = await call<{ state: (Record<string, unknown> & { xp?: number }) | null; updatedAt: number }>('/api/progress')
   localStorage.setItem(BASE, String(updatedAt))
-  if (state && (state.xp ?? 0) > useApp.getState().xp) useApp.setState({ ...state, theme: useApp.getState().theme })
+  if (state && (state.xp ?? 0) >= useApp.getState().xp) useApp.setState({ ...state, theme: useApp.getState().theme })
   else await push()
 }
 
