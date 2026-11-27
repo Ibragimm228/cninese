@@ -6,6 +6,7 @@ export type Word = {
   pinyin: string
   ru: string
   sense?: string
+  audio?: string
   note?: string
 }
 

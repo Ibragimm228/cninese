@@ -113,8 +113,8 @@ function WordDrawer({ word, onClose }: { word: Word; onClose: () => void }) {
           </button>
         </div>
         <div className="mt-4 flex gap-2">
-          <SpeakButton text={word.hanzi} />
-          <SpeakButton text={word.hanzi} slow />
+          <SpeakButton text={word.audio ?? word.hanzi} />
+          <SpeakButton text={word.audio ?? word.hanzi} slow />
         </div>
         {word.note && <p className="mt-5 rounded-2xl bg-gold/20 p-4 text-sm"><BulbIcon size={16} className="mr-1 inline-block align-text-bottom" /> {word.note}</p>}
         {chars.some((c) => mnemonics[c]) && (

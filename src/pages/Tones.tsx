@@ -93,7 +93,7 @@ function ToneQuiz() {
   }, [pool, word])
 
   useEffect(() => {
-    if (audioMode) void speak(word.hanzi, 0.75)
+    if (audioMode) void speak(word.audio ?? word.hanzi, 0.75)
   }, [word, audioMode])
 
   const pick = (t: number) => {
@@ -127,11 +127,11 @@ function ToneQuiz() {
       <div className="relative mt-8 flex flex-col items-center gap-6 md:flex-row md:gap-10">
         <div className="flex flex-col items-center">
           {audioMode && answer === null ? (
-            <SpeakButton text={word.hanzi} size="xl" />
+            <SpeakButton text={word.audio ?? word.hanzi} size="xl" />
           ) : (
             <span className="font-hanzi text-8xl font-semibold">{word.hanzi}</span>
           )}
-          <p className="mt-3 text-paper/60">{answer !== null || !audioMode ? word.ru : 'Послушай слог'}</p>
+          <p className="mt-3 text-paper/60">{answer !== null || !audioMode ? word.ru : word.audio ? `Определи тон иероглифа ${word.hanzi} во фразе` : 'Послушай слог'}</p>
         </div>
         <div className="grid w-full flex-1 grid-cols-2 gap-3 md:grid-cols-4">
           {TONE_INFO.map((t) => {

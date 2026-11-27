@@ -41,7 +41,7 @@ export function SpeakEx({ ex, locked, onChange }: ExProps<Extract<Exercise, { ty
         <p className="font-hanzi text-5xl font-semibold md:text-6xl">{ex.hanzi}</p>
         {(showPinyin || locked) && <p className="text-lg text-ink-soft">{ex.pinyin}</p>}
         <p className="text-ink-soft">{ex.ru}</p>
-        <SpeakButton text={ex.hanzi} size="md" className="mt-2" />
+        <SpeakButton text={ex.audio ?? ex.hanzi} size="md" className="mt-2" />
       </div>
       <div className="flex flex-col items-center gap-4">
         <motion.button

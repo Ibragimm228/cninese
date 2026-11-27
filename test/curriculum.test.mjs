@@ -46,6 +46,23 @@ test('the weekly schedule sentence refers to every week, not every day', () => {
   assert.equal(sentenceById.get('hsk2-u5-s2').ru, 'Я каждую неделю очень занят')
 })
 
+test('polyphonic entries have separate audio contexts and the exam uses them', (t) => {
+  const words = hskLevels.flatMap((level) => wordsByLevel[level])
+  for (const [hanzi, readings] of Object.entries({
+    长: { cháng: '很长', zhǎng: '长大' },
+    还: { hái: '还没', huán: '还钱' },
+    只: { zhī: '一只猫', zhǐ: '只喝水' },
+    过: { guo: '去过北京', guò: '过马路' },
+  })) {
+    const entries = words.filter((word) => word.hanzi === hanzi)
+    assert.deepEqual(Object.fromEntries(entries.map((word) => [word.pinyin, word.audio])), readings)
+  }
+  t.mock.method(Math, 'random', () => 0)
+  const listening = buildExam(2, true).find((q) => q.section === 'listen' && q.answer === '长')
+  assert.equal(listening?.audio, '很长')
+  assert.ok(!listening.options.includes('很'))
+})
+
 test('mock exams have unique choices and level-specific scoring, with writing at HSK 3', () => {
   assert.deepEqual(hskLevels.map((level) => examScale[level].pass), [120, 120, 180])
   for (const level of hskLevels) {

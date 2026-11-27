@@ -394,11 +394,12 @@ const catalog = new Map(legacyWords)
 
 function parseVocabulary(source: string): Word[] {
   return source.trim().split('\n').map((line) => {
-    const [hanzi, pinyin, ru, sense] = line.split('|')
+    const [hanzi, pinyin, ru, label, audio] = line.split('|')
+    const sense = label || undefined
     const legacy = !sense && catalog.get(hanzi)
     if (legacy) return legacy
     const id = `w-${slug(hanzi)}${sense ? `-${slug(sense)}` : ''}`
-    const word: Word = { id, hanzi, pinyin, ru, sense }
+    const word: Word = { id, hanzi, pinyin, ru, sense, audio }
     if (!catalog.has(hanzi)) catalog.set(hanzi, word)
     return word
   })

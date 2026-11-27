@@ -12,7 +12,7 @@ export type Exercise = { key: string } & (
   | { type: 'build'; sentence: Sentence; direction: 'ru-zh' | 'zh-ru' | 'listen'; tiles: string[]; answer: string[] }
   | { type: 'fill'; sentence: Sentence; blank: number; options: Word[] }
   | { type: 'write'; word: Word }
-  | { type: 'speak'; hanzi: string; pinyin: string; ru: string; wordIds: string[] }
+  | { type: 'speak'; hanzi: string; audio?: string; pinyin: string; ru: string; wordIds: string[] }
 )
 
 export type ExerciseType = Exercise['type']
@@ -46,13 +46,13 @@ function conflicts(a: Word, b: Word) {
   )
 }
 
-function distractors(word: Word, n: number, pool: Word[] = allWords): Word[] {
+function distractors(word: Word, n: number, pool: Word[] = allWords, context?: string): Word[] {
   const sameUnit = unitOfWord.get(word.id)?.words ?? []
   const candidates = [...new Set([...shuffle(pool), ...shuffle(sameUnit), ...shuffle(allWords)])]
   const out: Word[] = []
   for (const c of candidates) {
     if (out.length >= n) break
-    if (conflicts(c, word) || out.some((o) => conflicts(o, c))) continue
+    if (context?.includes(c.hanzi) || conflicts(c, word) || out.some((o) => conflicts(o, c))) continue
     out.push(c)
   }
   return out
@@ -65,7 +65,7 @@ function choice(word: Word, direction: 'zh-ru' | 'ru-zh', pool?: Word[]): Exerci
 }
 
 function listen(word: Word, pool?: Word[]): Exercise {
-  return { key: k('listen'), type: 'listen', word, options: shuffle([word, ...distractors(word, 3, pool)]) }
+  return { key: k('listen'), type: 'listen', word, options: shuffle([word, ...distractors(word, 3, pool, word.audio)]) }
 }
 
 function tone(word: Word): Exercise {
@@ -116,7 +116,7 @@ function write(word: Word): Exercise {
 }
 
 function speakWord(word: Word): Exercise {
-  return { key: k('speak'), type: 'speak', hanzi: word.hanzi, pinyin: word.pinyin, ru: word.ru, wordIds: [word.id] }
+  return { key: k('speak'), type: 'speak', hanzi: word.hanzi, audio: word.audio, pinyin: word.pinyin, ru: word.ru, wordIds: [word.id] }
 }
 
 function speakSentence(sentence: Sentence): Exercise {

@@ -26,7 +26,10 @@ export function MatchEx({ ex, onChange }: ExProps<Extract<Exercise, { type: 'mat
 
   const tap = (side: Side, id: string) => {
     if (done.includes(id)) return
-    if (side === 'zh') void speak(ex.words.find((w) => w.id === id)!.hanzi, rate)
+    if (side === 'zh') {
+      const word = ex.words.find((w) => w.id === id)!
+      void speak(word.audio ?? word.hanzi, rate)
+    }
     if (!sel || sel.side === side) {
       sfx.tap()
       setSel({ side, id })

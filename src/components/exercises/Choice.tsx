@@ -31,7 +31,7 @@ export function ChoiceEx({ ex, locked, onChange }: ExProps<Extract<Exercise, { t
     onChange({ ok: o.id === w.id, solution: ex.direction === 'zh-ru' ? w.ru : `${w.hanzi} (${w.pinyin})` }),
   )
   useEffect(() => {
-    if (ex.direction === 'zh-ru') void speak(w.hanzi, rate)
+    if (ex.direction === 'zh-ru') void speak(w.audio ?? w.hanzi, rate)
   }, [ex, w, rate])
 
   if (ex.direction === 'zh-ru')
@@ -39,7 +39,7 @@ export function ChoiceEx({ ex, locked, onChange }: ExProps<Extract<Exercise, { t
       <div>
         <ExTitle>Что означает это слово?</ExTitle>
         <div className="mb-8 flex items-center gap-5">
-          <SpeakButton text={w.hanzi} size="lg" />
+          <SpeakButton text={w.audio ?? w.hanzi} size="lg" />
           <div>
             {(showPinyin || w.sense) && <Pinyin text={w.pinyin} className="block text-lg" />}
             <span className={`break-all font-hanzi font-semibold ${w.hanzi.length > 3 ? 'text-3xl' : 'text-5xl md:text-6xl'}`}>{w.hanzi}</span>
@@ -76,7 +76,7 @@ export function ChoiceEx({ ex, locked, onChange }: ExProps<Extract<Exercise, { t
             disabled={locked}
             onClick={() => {
               pick(i)
-              void speak(o.hanzi, rate)
+              void speak(o.audio ?? o.hanzi, rate)
             }}
             state={locked ? (o.id === w.id ? 'correct' : sel === i ? 'wrong' : null) : null}
             className="flex-col !items-center justify-center gap-1 py-6 text-center md:py-8"
@@ -98,15 +98,15 @@ export function ListenEx({ ex, locked, onChange }: ExProps<Extract<Exercise, { t
     onChange({ ok: o.id === w.id, solution: `${w.hanzi} (${w.pinyin}) — ${w.ru}` }),
   )
   useEffect(() => {
-    const t = setTimeout(() => void speak(w.hanzi, rate), 300)
+    const t = setTimeout(() => void speak(w.audio ?? w.hanzi, rate), 300)
     return () => clearTimeout(t)
   }, [w, rate])
   return (
     <div>
-      <ExTitle badge="Аудирование">Что ты слышишь?</ExTitle>
+      <ExTitle badge="Аудирование">{w.audio ? 'Какое слово звучит во фразе?' : 'Что ты слышишь?'}</ExTitle>
       <div className="mb-10 flex items-end justify-center gap-4">
-        <SpeakButton text={w.hanzi} size="xl" autoFocus />
-        <SpeakButton text={w.hanzi} size="lg" slow />
+        <SpeakButton text={w.audio ?? w.hanzi} size="xl" autoFocus />
+        <SpeakButton text={w.audio ?? w.hanzi} size="lg" slow />
       </div>
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {ex.options.map((o, i) => (
@@ -139,7 +139,7 @@ export function ToneEx({ ex, locked, onChange }: ExProps<Extract<Exercise, { typ
     <div>
       <ExTitle badge="Тоны">Выбери правильный тон</ExTitle>
       <div className="mb-8 flex items-center gap-5">
-        <SpeakButton text={w.hanzi} size="lg" />
+        <SpeakButton text={w.audio ?? w.hanzi} size="lg" />
         <div>
           <span className="font-hanzi text-6xl font-semibold">{w.hanzi}</span>
           <span className="ml-3 text-lg text-ink-soft">— {w.ru}</span>

@@ -15,7 +15,7 @@ export function IntroEx({ ex, onChange }: ExProps<Extract<Exercise, { type: 'int
   const rate = useApp((s) => s.settings.speechRate)
   useEffect(() => {
     onChange({ ok: true })
-    const t = setTimeout(() => void speak(w.hanzi, rate), 400)
+    const t = setTimeout(() => void speak(w.audio ?? w.hanzi, rate), 400)
     return () => clearTimeout(t)
   }, [w, onChange, rate])
   const chars = Array.from(w.hanzi)
@@ -30,8 +30,8 @@ export function IntroEx({ ex, onChange }: ExProps<Extract<Exercise, { type: 'int
         style={{ perspective: 800 }}
       >
         <div className="absolute right-5 top-5 flex gap-2">
-          <SpeakButton text={w.hanzi} size="sm" />
-          <SpeakButton text={w.hanzi} size="sm" slow />
+          <SpeakButton text={w.audio ?? w.hanzi} size="sm" />
+          <SpeakButton text={w.audio ?? w.hanzi} size="sm" slow />
         </div>
         {chars.length === 1 && isSingleSyllable(w) ? (
           <HanziWriterBox char={w.hanzi} size={180} mode="animate" />

@@ -32,12 +32,12 @@ export function buildExam(level: HskLevel, voice: boolean): ExamQuestion[] {
   const sentences = units.filter((u) => u.level === level).flatMap((u) => u.sentences)
   const questions: ExamQuestion[] = []
   const options = (answer: string, pool: string[]) => shuffle([answer, ...pick([...new Set(pool)].filter((x) => x !== answer), 3)])
-  const spokenWords = levelWords.filter((w) => !w.sense && !w.hanzi.includes('…'))
+  const spokenWords = levelWords.filter((w) => (!w.sense || w.audio) && !w.hanzi.includes('…'))
   if (voice) {
     for (const word of pick(spokenWords, 8)) {
       questions.push({
-        section: 'listen', prompt: 'Прослушай и выбери услышанное слово', audio: word.hanzi,
-        options: options(word.hanzi, words.filter((w) => w.pinyin.replaceAll(' ', '') !== word.pinyin.replaceAll(' ', '') && !w.hanzi.includes('…')).map((w) => w.hanzi)),
+        section: 'listen', prompt: word.audio ? 'Какое слово звучит во фразе?' : 'Прослушай и выбери услышанное слово', audio: word.audio ?? word.hanzi,
+        options: options(word.hanzi, words.filter((w) => w.pinyin.replaceAll(' ', '') !== word.pinyin.replaceAll(' ', '') && !w.hanzi.includes('…') && !word.audio?.includes(w.hanzi)).map((w) => w.hanzi)),
         answer: word.hanzi,
       })
     }

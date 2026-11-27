@@ -32,7 +32,7 @@ export function WriteEx({ ex, onChange }: ExProps<Extract<Exercise, { type: 'wri
         </div>
         <div className="flex flex-col items-center gap-3 md:items-start">
           <div className="flex items-center gap-3">
-            <SpeakButton text={w.hanzi} size="md" />
+            <SpeakButton text={w.audio ?? w.hanzi} size="md" />
             <div>
               <Pinyin text={w.pinyin} className="text-2xl" />
               <p className="font-display text-lg font-semibold">{w.ru}</p>
