@@ -3,6 +3,8 @@ use axum::{extract::State, http::HeaderMap, Json};
 use rusqlite::{params, Connection};
 use serde::{Deserialize, Serialize};
 
+const HISTORY_LIMIT: i64 = 100;
+
 #[derive(Deserialize)]
 pub(super) struct ResultInput {
     level: i64,
@@ -28,11 +30,19 @@ pub(super) fn migrate(db: &Connection) -> rusqlite::Result<()> {
            completed_at INTEGER NOT NULL
          );
          CREATE INDEX IF NOT EXISTS exam_results_user ON exam_results(user_id, id DESC);",
-    )
+    )?;
+    db.execute(
+        "DELETE FROM exam_results WHERE id IN (
+           SELECT id FROM (SELECT id, row_number() OVER (PARTITION BY user_id ORDER BY id DESC) AS rank FROM exam_results)
+           WHERE rank > ?1
+         )",
+        [HISTORY_LIMIT],
+    )?;
+    Ok(())
 }
 
 pub(super) async fn record(State(db): State<Db>, headers: HeaderMap, Json(input): Json<ResultInput>) -> Result<Json<ExamResult>, ApiError> {
-    let db = db.lock().unwrap();
+    let mut db = db.lock().unwrap();
     let user = user_of(&db, &headers)?;
     let max = match input.level {
         1 | 2 => 200,
@@ -43,16 +53,25 @@ pub(super) async fn record(State(db): State<Db>, headers: HeaderMap, Json(input)
         return Err(bad(format!("score must be between 0 and {max}")));
     }
     let completed_at = now_ms();
-    db.execute("INSERT INTO exam_results (user_id, level, score, completed_at) VALUES (?1, ?2, ?3, ?4)",
+    let tx = db.transaction()?;
+    tx.execute("INSERT INTO exam_results (user_id, level, score, completed_at) VALUES (?1, ?2, ?3, ?4)",
         params![user, input.level, input.score, completed_at])?;
-    Ok(Json(ExamResult { id: db.last_insert_rowid(), level: input.level, score: input.score, completed_at }))
+    let id = tx.last_insert_rowid();
+    tx.execute(
+        "DELETE FROM exam_results WHERE user_id = ?1 AND id < (
+           SELECT id FROM exam_results WHERE user_id = ?1 ORDER BY id DESC LIMIT 1 OFFSET ?2
+         )",
+        params![user, HISTORY_LIMIT - 1],
+    )?;
+    tx.commit()?;
+    Ok(Json(ExamResult { id, level: input.level, score: input.score, completed_at }))
 }
 
 pub(super) async fn history(State(db): State<Db>, headers: HeaderMap) -> Result<Json<Vec<ExamResult>>, ApiError> {
     let db = db.lock().unwrap();
     let user = user_of(&db, &headers)?;
-    let mut stmt = db.prepare("SELECT id, level, score, completed_at FROM exam_results WHERE user_id = ?1 ORDER BY id DESC LIMIT 100")?;
-    let rows = stmt.query_map([user], |r| Ok(ExamResult { id: r.get(0)?, level: r.get(1)?, score: r.get(2)?, completed_at: r.get(3)? }))?;
+    let mut stmt = db.prepare("SELECT id, level, score, completed_at FROM exam_results WHERE user_id = ?1 ORDER BY id DESC LIMIT ?2")?;
+    let rows = stmt.query_map(params![user, HISTORY_LIMIT], |r| Ok(ExamResult { id: r.get(0)?, level: r.get(1)?, score: r.get(2)?, completed_at: r.get(3)? }))?;
     Ok(Json(rows.collect::<rusqlite::Result<_>>()?))
 }
 
@@ -61,6 +80,32 @@ mod tests {
     use super::*;
     use axum::http::{header, HeaderValue, StatusCode};
     use std::sync::{Arc, Mutex};
+
+    #[tokio::test]
+    async fn retains_only_latest_results_per_user() {
+        let conn = Connection::open_in_memory().unwrap();
+        crate::migrate(&conn).unwrap();
+        migrate(&conn).unwrap();
+        conn.execute("INSERT INTO users VALUES (1, 'one', '', 0), (2, 'two', '', 0)", []).unwrap();
+        let token = crate::open_session(&conn, 1).unwrap();
+        let mut headers = HeaderMap::new();
+        headers.insert(header::AUTHORIZATION, HeaderValue::from_str(&format!("Bearer {token}")).unwrap());
+        conn.execute("INSERT INTO exam_results (user_id, level, score, completed_at) VALUES (2, 1, 10, 0)", []).unwrap();
+        for score in 0..=HISTORY_LIMIT {
+            conn.execute("INSERT INTO exam_results (user_id, level, score, completed_at) VALUES (1, 1, ?1, 0)", [score]).unwrap();
+        }
+        migrate(&conn).unwrap();
+        let count = |db: &Connection, user| db.query_row("SELECT count(*) FROM exam_results WHERE user_id = ?1", [user], |r| r.get::<_, i64>(0)).unwrap();
+        assert_eq!(count(&conn, 1), HISTORY_LIMIT);
+        let db = Arc::new(Mutex::new(conn));
+        let Ok(Json(saved)) = record(State(db.clone()), headers.clone(), Json(ResultInput { level: 1, score: 101 })).await else { panic!("save failed") };
+        let Ok(Json(results)) = history(State(db.clone()), headers).await else { panic!("missing history") };
+        assert_eq!(results.first().unwrap().id, saved.id);
+        assert_eq!(results.last().unwrap().score, 2);
+        let conn = db.lock().unwrap();
+        assert_eq!(count(&conn, 1), HISTORY_LIMIT);
+        assert_eq!(count(&conn, 2), 1);
+    }
 
     #[tokio::test]
     async fn history_is_private_and_scores_are_validated() {
