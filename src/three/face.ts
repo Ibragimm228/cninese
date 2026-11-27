@@ -1,5 +1,5 @@
 import * as THREE from 'three'
-import { SKIN, SKIN_SHADE, canvasTexture, mat, mesh, sphere } from './kit'
+import { SKIN, SKIN_SHADE, canvasTexture, mat, mesh, res, sphere, sweep } from './kit'
 
 export function dirFrom(yaw: number, pitch: number) {
   return new THREE.Vector3(Math.sin(yaw) * Math.cos(pitch), Math.sin(pitch), Math.cos(yaw) * Math.cos(pitch))
@@ -23,7 +23,7 @@ export function headPoint(yaw: number, pitch: number, lift = 0, out = new THREE.
 export const sp = (yaw: number, pitch: number, r = 1) => headPoint(yaw, pitch).multiplyScalar(r)
 
 function headGeometry() {
-  const g = new THREE.SphereGeometry(1, 96, 72)
+  const g = new THREE.SphereGeometry(1, res(64, 32), res(48, 24))
   const pos = g.attributes.position
   const q = new THREE.Vector3()
   for (let i = 0; i < pos.count; i++) {
@@ -36,7 +36,8 @@ function headGeometry() {
 }
 
 /** A decal that hugs the head: painted features sit on these instead of being modelled. */
-function patch(yaw: number, pitch: number, hw: number, hh: number, lift: number, n = 14) {
+function patch(yaw: number, pitch: number, hw: number, hh: number, lift: number, n0 = 14) {
+  const n = res(n0, 6)
   const pos: number[] = [], uv: number[] = [], idx: number[] = []
   const q = new THREE.Vector3()
   for (let j = 0; j <= n; j++) {
@@ -464,7 +465,17 @@ export function buildHead(skinColor = SKIN) {
     head.add(ear)
     mesh(ear, sphere(0.17, 20, 16), skin, [0, 0, 0], [0, 0, 0], [0.42, 1, 0.72])
     mesh(ear, sphere(0.1, 14, 12), mat(SKIN_SHADE, { coat: 0, rough: 0.7 }), [side * 0.045, -0.01, 0.02], [0, 0, 0], [0.3, 0.95, 0.62])
+    // helix rim curling round the top, the inner fold and the lobe
+    const P = (x: number, y: number, z: number) => new THREE.Vector3(side * x, y, z)
+    const out = P(1, 0, 0)
+    mesh(ear, sweep([P(0.05, -0.1, 0.085), P(0.062, 0.02, 0.112), P(0.064, 0.12, 0.07), P(0.06, 0.158, -0.01), P(0.05, 0.12, -0.085), P(0.04, 0.0, -0.11), P(0.035, -0.09, -0.07)], { w: 0.034, t: 0.022, back: 1, up: out, profile: (q) => 0.55 + 0.45 * Math.sin(q * Math.PI), sides: 8, seg: 28 }), skin)
+    mesh(ear, sweep([P(0.066, 0.075, 0.03), P(0.07, 0.03, -0.035), P(0.068, -0.045, -0.03), P(0.064, -0.075, 0.02)], { w: 0.026, t: 0.016, back: 1, up: out, profile: (q) => 0.5 + 0.5 * Math.sin(q * Math.PI), sides: 8 }), skin)
+    mesh(ear, sphere(0.05, 12, 10), skin, [side * 0.035, -0.13, 0.01], [0, 0, 0], [0.5, 0.9, 0.8])
+    mesh(ear, sphere(0.028, 10, 8), skin, [side * 0.06, -0.01, 0.075], [0, 0, 0], [0.6, 1.3, 0.8])
   }
+  // a button nose, just enough to catch the light in profile
+  const nose = mesh(head, sphere(0.034, 16, 12), skin, [0, 0, 0], [0, 0, 0], [1, 0.75, 0.8])
+  nose.position.copy(headPoint(0, -0.335, -0.016))
   return { head, skin }
 }
 

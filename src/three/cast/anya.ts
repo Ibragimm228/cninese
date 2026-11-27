@@ -3,13 +3,13 @@ import { FORE, buildRig, legGeo, shoe, swaying, torsoGeo } from '../body'
 import type { Character } from '../chibi'
 import { sp } from '../face'
 import { fall, hairline, lock, scalp } from '../hair'
-import { capsule, cyl, even, grain, group, mat, mesh, rng, sheet, sphere, sweep, torus, turned, v } from '../kit'
+import { capsule, cyl, emboss, even, grain, group, mat, mesh, ribs, ring, rng, sheet, sphere, stitches, sweep, torus, turned, v } from '../kit'
 
 export function anya(): Character {
   const dress = mat('#1b1b22', { rough: 0.7, coat: 0.08, sheen: 0.4, sheenColor: '#565a80', bump: grain(128, 26, 31, true), bumpScale: 0.6, side: THREE.DoubleSide })
   const rig = buildRig(
     { iris: ['#1f7a52', '#48c486', '#c9f7d6'], pupil: '#0e3f2b', lash: '#4a2a36', brow: '#e58fa8', browWeight: 0.75, browArch: 0.3, browTilt: -0.08, mouth: 'smug', blush: 0.55, blushLines: true, w: 0.66, h: 0.74, tilt: 0.03, flat: 0.05, lashWeight: 1.1 },
-    { upper: dress, lower: dress, upperR: [0.11, 0.1], lowerR: [0.098, 0.092] },
+    { upper: dress, lower: dress, upperR: [0.11, 0.1], lowerR: [0.098, 0.092], folds: 0.006 },
   )
   const hairM = mat('#f7a3bd', { rough: 0.4, coat: 0.5, sheen: 0.6, sheenColor: '#fff0f5' })
   const hairDeep = mat('#e8839f', { rough: 0.5, coat: 0.3 })
@@ -49,7 +49,7 @@ export function anya(): Character {
     horn.rotateX(Math.PI / 2)
     horn.scale.setScalar(1.7)
     mesh(horn, turned([[0, -0.03], [0.1, -0.02], [0.105, 0.03], [0.07, 0.14], [0.02, 0.22], [0, 0.225]], 20, 12), black)
-    mesh(horn, torus(0.104, 0.02, 8, 22), gold, [0, 0.0, 0], [Math.PI / 2, 0, 0])
+    mesh(horn, torus(0.104, 0.02), gold, [0, 0.0, 0], [Math.PI / 2, 0, 0])
     mesh(horn, sphere(0.028, 10, 8), gold, [0, 0.225, 0])
   }
 
@@ -74,7 +74,15 @@ export function anya(): Character {
     const rad = (0.26 + t * 0.29) * (1 + Math.cos(a * 18) * 0.025 * t)
     return v(Math.sin(a) * rad, -0.05 - t * 0.4, Math.cos(a) * rad * 0.88)
   }, 72, 4), mat('#fbfaf6', { rough: 0.8, side: THREE.DoubleSide })).userData.keep = true
-  mesh(rig.body, torus(0.282, 0.02, 8, 36), gold, [0, 0.985, 0], [Math.PI / 2, 0, 0], [1, 0.8, 1])
+  // scalloped lace along the petticoat hem
+  const lace = mat('#fbfaf6', { rough: 0.85, coat: 0 })
+  for (let i = 0; i < 54; i++) {
+    const a = (i / 54) * Math.PI * 2
+    const rad = 0.55 * (1 + Math.cos(a * 18) * 0.025)
+    mesh(skirt, sphere(0.034, 10, 8), lace, [Math.sin(a) * rad, -0.455, Math.cos(a) * rad * 0.88], [0, a, 0], [1, 0.75, 0.3])
+  }
+  stitches(skirt, ring(0.5, -0.385, 0.88, 28), gold, { count: 90, len: 0.012, r: 0.003, closed: true })
+  mesh(rig.body, torus(0.282, 0.02), gold, [0, 0.985, 0], [Math.PI / 2, 0, 0], [1, 0.8, 1])
   // front placket with gold buttons
   mesh(rig.chest, sweep([v(0, 1.42, 0.2), v(0, 1.25, 0.272), v(0, 1.0, 0.228)], { w: 0.03, t: 0.012, up: v(0, 0, 1), profile: even }), gold)
   for (const y of [1.3, 1.18, 1.06]) mesh(rig.chest, sphere(0.024, 10, 8), gold, [0, y, y > 1.2 ? 0.278 : y > 1.1 ? 0.262 : 0.24])
@@ -89,23 +97,27 @@ export function anya(): Character {
     // puffed shoulder, gold-edged white cuff
     mesh(arm.shoulder, sphere(0.14, 18, 14), dress, [0, -0.06, 0], [0, 0, 0], [1, 0.9, 1])
     mesh(arm.elbow, turned([[0.09, -FORE + 0.09], [0.106, -FORE + 0.075], [0.11, -FORE + 0.02], [0.095, -FORE + 0.008]], 20, 8), white)
-    mesh(arm.elbow, torus(0.106, 0.01, 6, 20), gold, [0, -FORE + 0.08, 0], [Math.PI / 2, 0, 0])
+    mesh(arm.elbow, torus(0.106, 0.01), gold, [0, -FORE + 0.08, 0], [Math.PI / 2, 0, 0])
   }
 
   rig.legs.forEach((leg, i) => {
     const side = i ? -1 : 1
-    mesh(leg, legGeo(0.12, 0.095, 0.62, 1.02), white)
+    // ribbed tights
+    mesh(leg, emboss(legGeo(0.12, 0.095, 0.62, 1.02), ribs(26, 0.0022)), white)
+    for (let k = 0; k < 9; k++) mesh(leg, sphere(0.017, 8, 6), white, [Math.sin((k / 9) * Math.PI * 2) * 0.112, -0.428, Math.cos((k / 9) * Math.PI * 2) * 0.112], [0, 0, 0], [1, 0.8, 1])
     // sock cuff and mary janes with a strap and gold buckle
     mesh(leg, turned([[0.1, -0.43], [0.112, -0.44], [0.112, -0.5], [0.1, -0.51]], 20, 6), white)
     shoe(leg, side, 0.62, { upper: black, sole: black, toe: black, high: 0.0, size: 1.08, heel: 0.03 })
-    mesh(leg, torus(0.112, 0.016, 6, 20), black, [0, -0.6, 0.01], [Math.PI / 2 - 0.2, 0, 0])
+    mesh(leg, torus(0.112, 0.016), black, [0, -0.6, 0.01], [Math.PI / 2 - 0.2, 0, 0])
     mesh(leg, sphere(0.02, 8, 8), gold, [side * 0.112, -0.6, 0.01])
   })
 
   /* a peanut held up proudly, with sparkles */
   const nut = group(rig.arms[1].hand, [0.02, -0.26, 0.0], [0.2, 0, 0.3])
-  mesh(nut, sphere(0.085, 18, 14), shell, [0, 0.07, 0], [0, 0, 0], [1, 1.08, 1])
-  mesh(nut, sphere(0.092, 18, 14), shell, [0, -0.07, 0], [0, 0, 0], [1, 1.08, 1])
+  // the shell is netted with ridges like a real peanut
+  const dimple = (q: THREE.Vector3) => (Math.abs(Math.sin(Math.atan2(q.x, q.z) * 7)) * Math.abs(Math.sin(q.y * 95)) - 0.4) * 0.006
+  mesh(nut, emboss(sphere(0.085, 26, 20), dimple), shell, [0, 0.07, 0], [0, 0, 0], [1, 1.08, 1])
+  mesh(nut, emboss(sphere(0.092, 26, 20), dimple), shell, [0, -0.07, 0], [0, 0, 0], [1, 1.08, 1])
   mesh(nut, cyl(0.065, 0.065, 0.08, 14), shell)
   const sparkM = mat('#fff3b0', { emissive: '#ffd23f', glow: 2.5, rough: 0.3 })
   const sparks = [0, 1, 2].map((k) => {

@@ -12,6 +12,8 @@ export type StageOptions = {
   pedestal?: boolean
   preserve?: boolean
   zoom?: number
+  /** tessellation scale, 1 = full; chosen from the device and cast size when omitted */
+  detail?: number
 }
 
 export class ChibiStage {
@@ -107,8 +109,11 @@ export class ChibiStage {
   setCompanions(ids: readonly CompanionId[]) {
     this.chibis.forEach((c) => this.turntable.remove(c.root))
     const gap = 2.25
+    // a lone character gets every polygon; a line-up or a phone trades some away to stay smooth
+    const small = typeof matchMedia === 'function' && matchMedia('(pointer: coarse), (max-width: 760px)').matches
+    const detail = this.options.detail ?? (small ? (ids.length > 1 ? 0.5 : 0.7) : ids.length > 2 ? 0.7 : 1)
     this.chibis = ids.map((id, i) => {
-      const chibi = createChibi(id, this.options.reducedMotion)
+      const chibi = createChibi(id, this.options.reducedMotion, detail)
       const offset = i - (ids.length - 1) / 2
       chibi.root.position.x = offset * gap
       const holder = new THREE.Group()

@@ -1,7 +1,7 @@
 import * as THREE from 'three'
 import type { CompanionId } from '../data/companions'
 import { poseArm, type ArmPose, type Rig } from './body'
-import { consolidate } from './kit'
+import { consolidate, setDetail } from './kit'
 import { anya } from './cast/anya'
 import { chrollo } from './cast/chrollo'
 import { ichigo } from './cast/ichigo'
@@ -46,8 +46,10 @@ function blend(a: ArmPose, b: ArmPose, k: number): ArmPose {
 const WAVE = 1.9
 const CHEER = 2.6
 
-export function createChibi(id: CompanionId, reducedMotion = false): Chibi {
+export function createChibi(id: CompanionId, reducedMotion = false, detail = 1): Chibi {
+  setDetail(detail)
   const character = builders[id]()
+  setDetail(1)
   const { rig } = character
   consolidate(rig.root)
   rig.root.traverse((o) => { if ((o as THREE.Mesh).isMesh) o.receiveShadow = false })

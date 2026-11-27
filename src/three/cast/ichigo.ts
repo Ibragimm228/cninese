@@ -2,13 +2,13 @@ import * as THREE from 'three'
 import { FORE, buildRig, legGeo, swaying, torsoGeo } from '../body'
 import type { Character } from '../chibi'
 import { fall, hairline, lock, scalp } from '../hair'
-import { capsule, cyl, even, grain, group, mat, mesh, rng, sheet, sphere, sweep, torus, turned, v } from '../kit'
+import { capsule, cyl, even, grain, group, mat, mesh, rng, sheet, sphere, stitches, sweep, torus, turned, v } from '../kit'
 
 export function ichigo(): Character {
   const robe = mat('#17171c', { rough: 0.78, coat: 0.04, sheen: 0.35, sheenColor: '#55557a', bump: grain(128, 30, 12, true), bumpScale: 0.9, side: THREE.DoubleSide })
   const rig = buildRig(
     { iris: ['#5a2c10', '#a85a22', '#f0b46a'], pupil: '#2a1206', lash: '#3a1f10', brow: '#c9651a', browWeight: 1.25, browArch: 0.02, browTilt: 0.2, browY: -0.02, mouth: 'frown', blush: 0.1, w: 0.58, h: 0.52, tilt: 0.12, flat: 0.45, lashWeight: 1 },
-    { upper: robe, lower: robe, upperR: [0.13, 0.14], lowerR: [0.145, 0.19] },
+    { upper: robe, lower: robe, upperR: [0.13, 0.14], lowerR: [0.145, 0.19], folds: 0.012 },
   )
   const hairM = mat('#ff8a1f', { rough: 0.4, coat: 0.45, sheen: 0.5, sheenColor: '#ffe08a' })
   const hairDeep = mat('#e2670c', { rough: 0.5, coat: 0.3 })
@@ -56,6 +56,9 @@ export function ichigo(): Character {
     mesh(rig.chest, sweep([v(-0.17 + inset, 1.5, 0.1), v(-0.15 + inset, 1.38, 0.235 + z), v(-0.02, 1.16, 0.262 + z)], { w, t: 0.035, up: v(0, 0, 1), profile: even }), m)
     mesh(rig.chest, sweep([v(0.17 - inset, 1.5, 0.1), v(0.12, 1.53, -0.12), v(0, 1.54, -0.17), v(-0.12, 1.53, -0.12), v(-0.17 + inset, 1.5, 0.1)], { w, t: 0.035, up: v(0, 1, 0), profile: even }), m)
   }
+  const thread = mat('#4a4a5c', { rough: 0.9, coat: 0 })
+  stitches(rig.chest, [v(0.205, 1.4, 0.262), v(0.05, 1.15, 0.305), v(-0.1, 0.97, 0.292)], thread, { count: 30 })
+  stitches(rig.chest, [v(-0.205, 1.4, 0.255), v(-0.07, 1.18, 0.29)], thread, { count: 18 })
   collar(robe, 0.1, 0.012, 0)
   collar(white, 0.05, 0.002, 0.07)
   // white sash, knotted at the hip
@@ -69,9 +72,9 @@ export function ichigo(): Character {
   }
   // red rosary strap across the chest that carries the sword
   mesh(rig.chest, sweep([v(-0.3, 1.47, 0.02), v(-0.2, 1.38, 0.25), v(0.05, 1.15, 0.305), v(0.3, 0.98, 0.2), v(0.34, 0.95, -0.05), v(0.2, 1.1, -0.3), v(-0.1, 1.35, -0.32), v(-0.3, 1.47, 0.02)], { w: 0.065, t: 0.025, center: v(0, 1.2, 0), profile: even, seg: 60 }), red)
-  for (let i = 0; i < 7; i++) {
-    const t = i / 6
-    mesh(rig.chest, sphere(0.03, 10, 8), mat('#e24a52', { rough: 0.3, coat: 0.8 }), [-0.2 + t * 0.48, 1.38 - t * 0.4, 0.262 + Math.sin(t * Math.PI) * 0.06])
+  for (let i = 0; i < 12; i++) {
+    const t = i / 11
+    mesh(rig.chest, sphere(i % 3 === 1 ? 0.03 : 0.022, 12, 10), mat('#e24a52', { rough: 0.3, coat: 0.8 }), [-0.2 + t * 0.48, 1.38 - t * 0.4, 0.262 + Math.sin(t * Math.PI) * 0.06])
   }
 
   /* hakama: pleated, split at the front */
@@ -87,13 +90,19 @@ export function ichigo(): Character {
     mesh(leg, legGeo(0.11, 0.1, 0.62), white)
     // tabi sock and straw waraji
     const foot = group(leg, [0, -0.62, 0], [0, side * 0.14, 0])
-    mesh(foot, new THREE.CapsuleGeometry(0.108, 0.17, 8, 18), white, [0, -0.07, 0.07], [Math.PI / 2, 0, 0], [1, 1, 0.7])
+    mesh(foot, capsule(0.108, 0.17, 18, 8), white, [0, -0.07, 0.07], [Math.PI / 2, 0, 0], [1, 1, 0.7])
     mesh(foot, sweep([v(0.02 * side, -0.02, 0.2), v(0.02 * side, -0.08, 0.262)], { w: 0.01, t: 0.03, up: v(0, 0, 1), profile: even }), mat('#cfcabf'))
-    mesh(foot, new THREE.CapsuleGeometry(0.125, 0.2, 8, 18), straw, [0, -0.155, 0.08], [Math.PI / 2, 0, 0], [1, 1, 0.22])
+    mesh(foot, capsule(0.125, 0.2, 18, 8), straw, [0, -0.155, 0.08], [Math.PI / 2, 0, 0], [1, 1, 0.22])
     for (const k of [1, -1]) mesh(foot, sweep([v(0.02 * side, -0.01, 0.2), v(k * 0.08, 0.02, 0.1), v(k * 0.115, -0.12, 0.0)], { w: 0.03, t: 0.02, up: v(0, 1, 0), profile: even }), straw)
-    mesh(foot, torus(0.1, 0.014, 6, 18), straw, [0, 0.03, -0.01], [Math.PI / 2, 0, 0])
+    mesh(foot, torus(0.1, 0.014), straw, [0, 0.03, -0.01], [Math.PI / 2, 0, 0])
   })
 
+  // hakama ties in a flat bow under the sash
+  for (const k of [1, -1]) {
+    mesh(rig.body, sweep([v(0, 0.84, 0.292), v(k * 0.07, 0.87, 0.3), v(k * 0.12, 0.83, 0.285), v(k * 0.06, 0.81, 0.295), v(0, 0.84, 0.292)], { w: 0.035, t: 0.012, up: v(0, 0, 1), profile: even, center: v(k * 0.06, 0.84, 0.25) }), robe)
+    mesh(rig.body, sweep([v(0, 0.84, 0.292), v(k * 0.03, 0.74, 0.3), v(k * 0.05, 0.66, 0.292)], { w: 0.035, t: 0.01, up: v(0, 0, 1), profile: even }), robe)
+  }
+  mesh(rig.body, sphere(0.028, 12, 10), robe, [0, 0.84, 0.297], [0, 0, 0], [1, 0.8, 0.7])
   for (const arm of rig.arms) {
     // wide sleeve opening with white lining
     mesh(arm.elbow, turned([[0.185, -FORE + 0.03], [0.192, -FORE + 0.0], [0.17, -FORE + 0.012], [0.1, -FORE + 0.06]], 24, 8), white)
@@ -122,9 +131,16 @@ export function ichigo(): Character {
   const edgeGeo = new THREE.ExtrudeGeometry(edge, { depth: 0.012, bevelEnabled: true, bevelThickness: 0.012, bevelSize: 0.008, bevelSegments: 1 })
   edgeGeo.translate(0, 0, -0.006)
   mesh(sword, edgeGeo, steel)
+  // fuller cut into the flat of the blade, with a line of forging marks beside it
+  for (const z of [1, -1]) {
+    mesh(sword, sweep([v(-0.06, -0.7, z * 0.028), v(-0.06, 0.4, z * 0.028), v(-0.07, 0.85, z * 0.028)], { w: 0.03, t: 0.004, up: v(0, 0, z), profile: (q) => Math.sin(Math.min(1, (1 - q) * 5) * Math.PI / 2), seg: 16, sides: 8 }), steel)
+    for (let k = 0; k < 9; k++) mesh(sword, sphere(0.011, 8, 6), steel, [-0.105, -0.62 + k * 0.16, z * 0.027], [0, 0, 0], [1, 1, 0.35])
+  }
+  // collar where the blade meets the tang
+  mesh(sword, cyl(0.07, 0.05, 0.05, 20), blackSteel, [-0.02, -0.765, 0], [0, 0, 0], [1.6, 1, 0.5])
   // cloth-wrapped tang
   mesh(sword, cyl(0.045, 0.04, 0.42, 12), wrap, [-0.02, -0.96, 0])
-  for (let i = 0; i < 7; i++) mesh(sword, torus(0.047, 0.012, 6, 14), wrap, [-0.02, -0.8 - i * 0.055, 0], [Math.PI / 2 + 0.35, 0, 0])
+  for (let i = 0; i < 7; i++) mesh(sword, torus(0.047, 0.012), wrap, [-0.02, -0.8 - i * 0.055, 0], [Math.PI / 2 + 0.35, 0, 0])
   const ribbon = mesh(sword, sweep([v(-0.02, -1.17, 0), v(0.06, -1.3, 0.02), v(0.02, -1.5, 0.0), v(0.1, -1.68, 0.03)], { w: 0.06, t: 0.012, up: v(0, 0, 1), profile: even, seg: 20 }), wrap)
   ribbon.geometry.translate(0.02, 1.17, 0)
   ribbon.position.set(-0.02, -1.17, 0)

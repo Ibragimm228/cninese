@@ -1,15 +1,35 @@
 import * as THREE from 'three'
 import { headPoint, sp } from './face'
-import { mesh, sweep, type SweepOpts } from './kit'
+import { detail, mesh, res, sweep, type SweepOpts } from './kit'
+
+let serial = 0
 import { swaying, type Rig } from './body'
 
 export type HairPoint = [yaw: number, pitch: number, r: number]
 
 /** One sculpted lock running through points given around the head. `sway` makes it trail behind motion. */
-export function lock(rig: Rig, material: THREE.Material, pts: HairPoint[], o: SweepOpts & { sway?: number }) {
+export function lock(rig: Rig, material: THREE.Material, pts: HairPoint[], o: SweepOpts & { sway?: number; strays?: number }) {
   const points = pts.map(([yaw, pitch, r]) => sp(yaw, pitch, r))
-  const geo = sweep(points, o)
+  // wide locks are grooved into strands, and a couple of loose hairs ride on top of each
+  const ridges = o.ridges ?? (o.w >= 0.12 ? Math.min(9, Math.max(3, Math.round(o.w * 21))) : 0)
+  const geo = sweep(points, { ...o, ridges })
   const m = mesh(rig.hair, geo, material)
+  if (o.w >= 0.2 && detail() >= 0.6 && o.strays !== 0) {
+    const n = serial++
+    for (let k = 0; k < (o.strays ?? 1); k++) {
+      const h = (j: number) => Math.sin((n + 1) * 12.9898 + k * 78.233 + j * 37.719) * 0.5
+      const off = (k ? -1 : 1) * o.w * (0.16 + (h(0) + 0.5) * 0.2)
+      const start = k ? 0.12 : 0
+      const stray = pts.map(([yaw, pitch, r], i): HairPoint => {
+        const t = i / (pts.length - 1)
+        return [yaw + off * (1 - t * 0.5) / Math.max(0.35, Math.cos(pitch)) + h(i + 1) * 0.03, pitch + h(i + 7) * 0.02, r + (o.t ?? o.w / 3) * 0.42 * Math.sin(Math.min(1, t * 1.25) * Math.PI)]
+      }).slice(start ? 1 : 0)
+      const sg = sweep(stray.map(([yaw, pitch, r]) => sp(yaw, pitch, r)), { w: 0.035 + (h(3) + 0.5) * 0.02, t: 0.014, back: 1, sides: 6, seg: o.seg, profile: (q) => Math.sin(Math.min(1, q * 6) * Math.PI / 2) * (1 - q ** 3) })
+      if (o.sway) sg.translate(-points[0].x, -points[0].y, -points[0].z)
+      const child = mesh(o.sway ? m : rig.hair, sg, material)
+      if (o.sway) child.userData.keep = true
+    }
+  }
   if (o.sway) {
     geo.translate(-points[0].x, -points[0].y, -points[0].z)
     m.position.copy(points[0])
@@ -31,6 +51,7 @@ export type FallOpts = Partial<SweepOpts> & {
   swoop?: number
   fromYaw?: number
   sway?: number
+  strays?: number
 }
 
 /** A lock that falls from the crown to a point on the head — bangs, sides and the back are all made of these. */
@@ -50,7 +71,7 @@ export function fall(rig: Rig, material: THREE.Material, yaw: number, pitch: num
 
 /** The shell of hair under the locks, following a hairline that can differ per character. */
 export function scalp(rig: Rig, material: THREE.Material, hairline: (yaw: number) => number, lift = 0.035) {
-  const nu = 72, nv = 26
+  const nu = res(72, 24), nv = res(26, 10)
   const pos: number[] = [], idx: number[] = [], uv: number[] = []
   const q = new THREE.Vector3()
   for (let j = 0; j <= nv; j++) {

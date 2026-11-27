@@ -3,7 +3,7 @@ import { FORE, UPPER, buildRig, furRing, legGeo, shoe, swaying, torsoGeo } from 
 import type { Character } from '../chibi'
 import { sp } from '../face'
 import { hairline, lock, scalp } from '../hair'
-import { canvasTexture, cyl, even, grain, group, mat, mesh, rng, sheet, sphere, sweep, torus, v } from '../kit'
+import { box, canvasTexture, cyl, even, grain, group, mat, mesh, ring, rng, sheet, sphere, stitches, sweep, torus, v } from '../kit'
 
 function coverTexture() {
   return canvasTexture(256, 320, (ctx, w, h) => {
@@ -41,7 +41,7 @@ export function chrollo(): Character {
   const lining = mat('#3b2a5c', { rough: 0.6, side: THREE.DoubleSide })
   const rig = buildRig(
     { iris: ['#15131c', '#3a3550', '#8d86b8'], pupil: '#050408', lash: '#101014', brow: '#17161d', browWeight: 0.9, browArch: 0.1, browTilt: 0.05, mouth: 'smirk', blush: 0.12, w: 0.6, h: 0.56, tilt: 0.08, flat: 0.35, lashWeight: 1 },
-    { upper: coatM, lower: coatM, upperR: [0.125, 0.12], lowerR: [0.118, 0.125] },
+    { upper: coatM, lower: coatM, upperR: [0.125, 0.12], lowerR: [0.118, 0.125], folds: 0.009 },
   )
   const hairM = mat('#16151c', { rough: 0.3, coat: 0.8, sheen: 0.6, sheenColor: '#7f8cff' })
   const fur = mat('#f6f1e7', { rough: 0.95, coat: 0, sheen: 0.8, sheenColor: '#ffffff' })
@@ -49,6 +49,7 @@ export function chrollo(): Character {
   const dark = mat('#121118', { rough: 0.55, coat: 0.2 })
   const leather = mat('#0d0d12', { rough: 0.3, coat: 0.7 })
   const gold = mat('#e2b95a', { rough: 0.25, metal: 0.9 })
+  const thread = mat('#5d5878', { rough: 0.9, coat: 0 })
   const ink = mat('#2a2f7c', { rough: 0.6 })
 
   /* hair: combed straight back in separate glossy strands */
@@ -72,7 +73,7 @@ export function chrollo(): Character {
     ear.position.copy(sp(side * 1.5, -0.42, 0.98))
     mesh(ear, cyl(0.008, 0.008, 0.07, 6), gold, [0, -0.035, 0])
     mesh(ear, sphere(0.062, 20, 14), mat('#3fd6d0', { rough: 0.1, coat: 1, emissive: '#1c8f8a', glow: 0.5 }), [0, -0.12, 0])
-    mesh(ear, torus(0.03, 0.008, 6, 14), gold, [0, -0.06, 0], [Math.PI / 2, 0, 0])
+    mesh(ear, torus(0.03, 0.008), gold, [0, -0.06, 0], [Math.PI / 2, 0, 0])
     ear.userData.keep = true
     swaying(rig, ear, 1.2)
   }
@@ -92,12 +93,22 @@ export function chrollo(): Character {
     mesh(rig.chest, sweep([v(side * 0.05, 1.44, 0.21), v(side * 0.09, 1.25, 0.285), v(side * 0.03, 1.02, 0.262)], { w: 0.05, t: 0.012, up: v(0, 0, 1), profile: even }), lining)
   }
   // belt with a buckle
-  mesh(rig.body, torus(0.325, 0.03, 10, 40), leather, [0, 0.9, 0], [Math.PI / 2, 0, 0], [1, 0.8, 1])
-  mesh(rig.body, new THREE.BoxGeometry(0.1, 0.075, 0.03), gold, [0, 0.9, 0.262])
-  mesh(rig.body, new THREE.BoxGeometry(0.06, 0.04, 0.035), leather, [0, 0.9, 0.262])
+  mesh(rig.body, torus(0.325, 0.03), leather, [0, 0.9, 0], [Math.PI / 2, 0, 0], [1, 0.8, 1])
+  mesh(rig.body, box(0.1, 0.075, 0.03), gold, [0, 0.9, 0.262])
+  mesh(rig.body, box(0.06, 0.04, 0.035), leather, [0, 0.9, 0.262])
+  // belt loops, punched holes and a pointed strap end
+  for (const a of [0.75, -0.75, 2.2, -2.2, Math.PI]) mesh(rig.body, box(0.03, 0.085, 0.014), dark, [Math.sin(a) * 0.335, 0.9, Math.cos(a) * 0.268], [0, a, 0])
+  for (let k = 0; k < 4; k++) mesh(rig.body, cyl(0.007, 0.007, 0.012, 10), gold, [0.085 + k * 0.035, 0.9, 0.262 - k * 0.006 - k * k * 0.0015], [Math.PI / 2, 0, 0])
+  for (const side of [1, -1]) {
+    // topstitching down the lapels
+    stitches(rig.chest, [v(side * 0.165, 1.44, 0.228), v(side * 0.225, 1.25, 0.312), v(side * 0.165, 1.02, 0.3), v(side * 0.11, 0.87, 0.31)], thread, { count: 30 })
+  }
+  // back seam of the coat
+  stitches(rig.chest, [v(0.045, 1.4, -0.3), v(0.045, 1.15, -0.332), v(0.045, 0.9, -0.33)], thread, { count: 26 })
+  stitches(rig.chest, [v(-0.045, 1.4, -0.3), v(-0.045, 1.15, -0.332), v(-0.045, 0.9, -0.33)], thread, { count: 26 })
   // fur collar: three plush rows
   furRing(rig.chest, fur, { r: 0.33, y: 1.47, count: 26, len: 0.2, w: 0.13, rows: 3, squash: 0.85, seed: 3, droop: 0.5 })
-  mesh(rig.chest, torus(0.25, 0.1, 12, 36), fur, [0, 1.46, -0.01], [Math.PI / 2, 0, 0], [1, 0.85, 1])
+  mesh(rig.chest, torus(0.25, 0.1), fur, [0, 1.46, -0.01], [Math.PI / 2, 0, 0], [1, 0.85, 1])
   // inverted cross on the back of the coat
   mesh(rig.chest, new THREE.BoxGeometry(0.05, 0.36, 0.012), white, [0, 1.1, -0.325])
   mesh(rig.chest, new THREE.BoxGeometry(0.2, 0.05, 0.012), white, [0, 1.0, -0.322])
@@ -121,18 +132,26 @@ export function chrollo(): Character {
 
   for (const arm of rig.arms) {
     // shoulder seam and fur cuff
-    mesh(arm.shoulder, torus(0.123, 0.014, 6, 22), dark, [0, -UPPER * 0.02, 0], [Math.PI / 2, 0, 0])
+    mesh(arm.shoulder, torus(0.123, 0.014), dark, [0, -UPPER * 0.02, 0], [Math.PI / 2, 0, 0])
     furRing(arm.elbow, fur, { r: 0.125, y: -FORE + 0.05, count: 13, len: 0.1, w: 0.07, rows: 2, seed: arm.side + 4, droop: 0.6 })
-    mesh(arm.elbow, torus(0.11, 0.05, 8, 20), fur, [0, -FORE + 0.045, 0], [Math.PI / 2, 0, 0])
+    mesh(arm.elbow, torus(0.11, 0.05), fur, [0, -FORE + 0.045, 0], [Math.PI / 2, 0, 0])
+    // signet rings
+    mesh(arm.fingers[arm.side > 0 ? 1 : 2], torus(0.0255, 0.007, Math.PI * 2, 18), gold, [0, -0.028, 0], [Math.PI / 2, 0, 0])
+    mesh(arm.fingers[arm.side > 0 ? 1 : 2], sphere(0.012, 10, 8), mat('#3fd6d0', { rough: 0.1, coat: 1 }), [arm.side * 0.027, -0.028, 0])
   }
 
   rig.legs.forEach((leg, i) => {
     const side = i ? -1 : 1
-    mesh(leg, legGeo(0.15, 0.125, 0.56, 1.03), dark)
+    mesh(leg, legGeo(0.15, 0.125, 0.56, 1.03, 0.009), dark)
     // trouser crease
     mesh(leg, sweep([v(0, -0.05, 0.15), v(0, -0.3, 0.145), v(0, -0.54, 0.128)], { w: 0.02, t: 0.012, up: v(0, 0, 1), profile: even }), dark)
-    shoe(leg, side, 0.6, { upper: leather, sole: dark, toe: leather, lace: dark, high: 0.16, size: 1.12, heel: 0.03 })
-    mesh(leg, torus(0.125, 0.014, 6, 20), gold, [0, -0.5, 0], [Math.PI / 2, 0, 0])
+    shoe(leg, side, 0.6, { upper: leather, sole: dark, toe: leather, lace: dark, thread, high: 0.16, size: 1.12, heel: 0.03 })
+    mesh(leg, torus(0.125, 0.014), gold, [0, -0.5, 0], [Math.PI / 2, 0, 0])
+    // buckled strap across the boot shaft
+    mesh(leg, torus(0.131, 0.016), leather, [0, -0.44, 0], [Math.PI / 2, 0, 0])
+    mesh(leg, box(0.05, 0.046, 0.014), gold, [side * 0.07, -0.44, 0.115], [0, side * 0.55, 0])
+    mesh(leg, box(0.026, 0.024, 0.018), leather, [side * 0.07, -0.44, 0.115], [0, side * 0.55, 0])
+    stitches(leg, ring(0.128, -0.39, 1, 16), thread, { count: 34, closed: true })
   })
 
   /* Bandit's Secret: an open book resting on the palm */
@@ -142,8 +161,12 @@ export function chrollo(): Character {
   const pages: THREE.Object3D[] = []
   for (const s of [1, -1]) {
     const half = group(book, [0, 0, 0], [0, 0, s * 0.32])
-    mesh(half, new THREE.BoxGeometry(0.3, 0.02, 0.4), cover, [s * 0.15, -0.012, 0])
-    mesh(half, new THREE.BoxGeometry(0.27, 0.035, 0.37), paper, [s * 0.145, 0.015, 0])
+    mesh(half, box(0.3, 0.02, 0.4, 0.006), cover, [s * 0.15, -0.012, 0])
+    // the page block is a stack of separate leaves, fanned slightly
+    for (let k = 0; k < 9; k++) mesh(half, new THREE.BoxGeometry(0.27 - k * 0.0035, 0.0034, 0.37 - k * 0.002), paper, [s * (0.145 - k * 0.0012), 0.0 + k * 0.0042, 0])
+    // gilded corners and a ruled border
+    for (const z of [1, -1]) mesh(half, box(0.045, 0.026, 0.045, 0.004), gold, [s * 0.28, -0.012, z * 0.18])
+    for (let k = 0; k < 4; k++) mesh(half, new THREE.BoxGeometry(0.16 - (k % 2) * 0.05, 0.002, 0.007), ink, [s * 0.14, 0.0345, -0.145 + k * 0.022])
     for (let k = 0; k < 5; k++) mesh(half, new THREE.BoxGeometry(0.2, 0.002, 0.012), ink, [s * 0.15, 0.034, -0.12 + k * 0.06])
   }
   mesh(book, cyl(0.022, 0.022, 0.4, 10), cover, [0, -0.012, 0], [Math.PI / 2, 0, 0])
@@ -152,10 +175,14 @@ export function chrollo(): Character {
     mesh(page, sheet((u, t) => v(u * 0.26, Math.sin(u * Math.PI) * 0.03, (t - 0.5) * 0.36), 6, 1), mat('#fbf4e2', { rough: 0.9, side: THREE.DoubleSide })).userData.keep = true
     pages.push(page)
   }
+  // ribbon bookmark trailing out of the spine
+  const mark = mesh(book, sweep([v(0, 0.03, -0.18), v(0.01, 0.01, -0.24), v(0.03, -0.06, -0.27), v(0.02, -0.14, -0.26)], { w: 0.022, t: 0.004, up: v(0, 0, -1), profile: even, seg: 14 }), mat('#b3202a', { rough: 0.6, side: THREE.DoubleSide }))
+  mark.userData.keep = true
+  for (const z of [-0.14, -0.05, 0.05, 0.14]) mesh(book, torus(0.0235, 0.004, Math.PI * 2, 16), gold, [0, -0.012, z])
   // glowing sigil above the pages
-  const sigil = mesh(book, torus(0.09, 0.008, 6, 28), mat('#b9a4ff', { emissive: '#8f6bff', glow: 2.2, rough: 0.3 }), [0, 0.2, 0], [Math.PI / 2, 0, 0])
+  const sigil = mesh(book, torus(0.09, 0.008), mat('#b9a4ff', { emissive: '#8f6bff', glow: 2.2, rough: 0.3 }), [0, 0.2, 0], [Math.PI / 2, 0, 0])
   sigil.userData.keep = true
-  const sigil2 = mesh(sigil, torus(0.055, 0.006, 6, 4), mat('#e9e0ff', { emissive: '#b9a4ff', glow: 2.4 }))
+  const sigil2 = mesh(sigil, torus(0.055, 0.006), mat('#e9e0ff', { emissive: '#b9a4ff', glow: 2.4 }))
   sigil2.userData.keep = true
 
   return {

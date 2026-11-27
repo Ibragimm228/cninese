@@ -2,7 +2,7 @@ import * as THREE from 'three'
 import { FORE, buildRig, legGeo, shoe, torsoGeo } from '../body'
 import type { Character } from '../chibi'
 import { fall, hairline, lock, scalp } from '../hair'
-import { canvasTexture, grain, group, mat, mesh, rng, sphere, sweep, torus, turned, v } from '../kit'
+import { canvasTexture, emboss, grain, group, mat, mesh, ribs, ring, rng, sphere, stitches, sweep, torus, turned, v } from '../kit'
 
 function jerseyTexture() {
   return canvasTexture(1024, 512, (ctx, w, h) => {
@@ -95,6 +95,7 @@ export function kuroko(): Character {
   const white = mat('#fbfbf7', { rough: 0.7, coat: 0.05, bump: grain(128, 30, 2, true), bumpScale: 0.6 })
   const black = mat('#17181d', { rough: 0.6, coat: 0.1 })
   const red = mat('#d7262d', { rough: 0.55, coat: 0.15 })
+  const thread = mat('#c9c9c2', { rough: 0.9, coat: 0 })
   const rubber = mat('#f4f4f0', { rough: 0.8, coat: 0 })
 
   /* hair: a soft, layered mop with flicked tips */
@@ -135,7 +136,7 @@ export function kuroko(): Character {
     mesh(arm.shoulder, torus(0.118, 0.022), black, [-arm.side * 0.02, 0.0, 0], [0, Math.PI / 2, 0], [1, 1.15, 1])
     mesh(arm.shoulder, torus(0.136, 0.011), red, [-arm.side * 0.03, 0.0, 0], [0, Math.PI / 2, 0], [1, 1.15, 1])
     // wristband
-    mesh(arm.elbow, turned([[0.079, -FORE + 0.1], [0.087, -FORE + 0.085], [0.086, -FORE + 0.025], [0.077, -FORE + 0.012]], 20, 8), black)
+    mesh(arm.elbow, emboss(turned([[0.079, -FORE + 0.1], [0.087, -FORE + 0.085], [0.086, -FORE + 0.025], [0.077, -FORE + 0.012]], 30, 8), ribs(30, 0.002)), black)
   }
 
   /* shorts */
@@ -153,10 +154,13 @@ export function kuroko(): Character {
     // knee
     mesh(leg, sphere(0.1, 14, 10), rig.skin, [0, -0.36, 0.035], [0, 0, 0], [1, 1, 0.7])
     // sock with two bands
-    mesh(leg, turned([[0.102, -0.4], [0.112, -0.42], [0.108, -0.56], [0.1, -0.64]], 22, 10), white)
+    mesh(leg, emboss(turned([[0.102, -0.4], [0.112, -0.42], [0.108, -0.56], [0.1, -0.64]], 36, 10), ribs(28, 0.0028)), white)
+    // double-stitched hem and a seam down the inside of the shorts
+    stitches(leg, ring(0.219, -0.235, 1, 20).map((q) => q.setX(q.x + side * 0.01)), thread, { count: 46, closed: true })
+    stitches(leg, ring(0.218, -0.222, 1, 20).map((q) => q.setX(q.x + side * 0.01)), thread, { count: 46, closed: true })
     mesh(leg, torus(0.112, 0.012), black, [0, -0.44, 0], [Math.PI / 2, 0, 0])
     mesh(leg, torus(0.111, 0.012), red, [0, -0.475, 0], [Math.PI / 2, 0, 0])
-    shoe(leg, side, 0.62, { upper: white, sole: rubber, toe: black, lace: red, tongue: black, stripe: red, high: 0.1, size: 1.12 })
+    shoe(leg, side, 0.62, { upper: white, sole: rubber, toe: black, lace: red, thread, tongue: black, stripe: red, high: 0.1, size: 1.12 })
   })
 
   /* basketball spinning on a fingertip */
@@ -164,6 +168,11 @@ export function kuroko(): Character {
   const ball = group(rig.arms[1].hand, [0, -0.47, 0.03])
   const ballMesh = mesh(ball, sphere(0.27, 40, 28), mat('#ffffff', { rough: 0.78, coat: 0.05, map, bump, bumpScale: 1.4 }))
   ballMesh.userData.keep = true
+  // the channels between the panels are modelled, not only painted
+  const seam = mat('#16110e', { rough: 0.9, coat: 0 })
+  mesh(ballMesh, torus(0.2695, 0.0045, Math.PI * 2, 64), seam, [0, 0, 0], [Math.PI / 2, 0, 0])
+  mesh(ballMesh, torus(0.2695, 0.0045, Math.PI * 2, 64), seam)
+  mesh(ballMesh, torus(0.2695, 0.0045, Math.PI * 2, 64), seam, [0, 0, 0], [0, Math.PI / 2, 0])
 
   const character: Character = {
     rig,
