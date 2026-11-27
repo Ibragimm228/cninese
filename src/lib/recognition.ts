@@ -65,7 +65,7 @@ export function matchesSpeech(alternatives: string[], hanzi: string, pinyin: str
   return alternatives.some((alt) => {
     const got = clean(alt)
     if (!got) return false
-    if (got === want || got.includes(want)) return true
+    if (got === want) return true
     const sound = Array.from(got).map((c) => sounds.get(c))
     return sound.every((x) => x !== undefined) && sound.join('') === wantSound
   })
