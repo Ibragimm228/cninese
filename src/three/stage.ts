@@ -202,6 +202,7 @@ export class ChibiStage {
       m.geometry.dispose()
       const material = m.material as THREE.MeshPhysicalMaterial
       material.map?.dispose()
+      ;(material as unknown as THREE.MeshToonMaterial).gradientMap?.dispose()
       material.dispose()
     })
     this.scene.environment?.dispose()

@@ -64,14 +64,11 @@ function load(id: CompanionId, lite: boolean) {
   return hit
 }
 
-let ramp: THREE.DataTexture | undefined
-/** Two flat tones, the shaded one tinted violet: cel shading instead of a smooth falloff. */
+/** Two flat tones, the shaded one tinted violet: cel shading instead of a smooth falloff. Owned by its material so the stage can dispose it. */
 function toonRamp() {
-  if (!ramp) {
-    ramp = new THREE.DataTexture(new Uint8Array([196, 176, 208, 255, 196, 176, 208, 255, 255, 255, 255, 255, 255, 255, 255, 255]), 4, 1, THREE.RGBAFormat)
-    ramp.minFilter = ramp.magFilter = THREE.NearestFilter
-    ramp.needsUpdate = true
-  }
+  const ramp = new THREE.DataTexture(new Uint8Array([196, 176, 208, 255, 196, 176, 208, 255, 255, 255, 255, 255, 255, 255, 255, 255]), 4, 1, THREE.RGBAFormat)
+  ramp.minFilter = ramp.magFilter = THREE.NearestFilter
+  ramp.needsUpdate = true
   return ramp
 }
 
