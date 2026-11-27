@@ -1,4 +1,4 @@
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { Button } from '../components/Button'
@@ -9,6 +9,7 @@ import { hskLevels, lessons, lessonsOfUnit, units, wordById } from '../data/curr
 import type { HskLevel, Lesson, Unit } from '../data/types'
 import { currentLessonIndex, lessonStatus, unitProgress, type LessonStatus } from '../lib/progress'
 import { useApp } from '../lib/store'
+import { themedMotion } from '../lib/theme'
 
 export default function Learn() {
   const s = useApp()
@@ -113,6 +114,8 @@ function UnitSection({
 
 function LessonRow({ lesson, index, status, open, onToggle }: { lesson: Lesson; index: number; status: LessonStatus; open: boolean; onToggle: () => void }) {
   const rec = useApp((s) => s.lessons[lesson.id])
+  const theme = useApp((s) => s.theme)
+  const transition = themedMotion(theme, useReducedMotion())?.transition
   const Icon = status === 'done' ? CheckIcon : lesson.kind === 'test' ? TrophyIcon : lesson.kind === 'review' ? BookIcon : StarIcon
   const description = status === 'locked' ? 'Пройди предыдущие уроки, чтобы открыть этот.'
     : lesson.kind === 'learn' ? `Новые слова: ${lesson.newWordIds.map((id) => wordById.get(id)!.hanzi).join(' · ')}`
@@ -128,7 +131,13 @@ function LessonRow({ lesson, index, status, open, onToggle }: { lesson: Lesson; 
       </button>
       <AnimatePresence initial={false}>
         {open && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: 'auto', opacity: 1 }} exit={{ height: 0, opacity: 0 }} transition={{ duration: 0.22 }} className="overflow-hidden">
+          <motion.div
+            initial={transition ? { opacity: 0 } : { height: 0, opacity: 0 }}
+            animate={transition ? { opacity: 1 } : { height: 'auto', opacity: 1 }}
+            exit={transition ? undefined : { height: 0, opacity: 0 }}
+            transition={transition ?? { duration: 0.22 }}
+            className="overflow-hidden"
+          >
             <div className="lesson-details">
               <p>{description}</p>
               {rec && <p>Лучшая точность: {Math.round(rec.bestAccuracy * 100)}%</p>}
@@ -142,19 +151,22 @@ function LessonRow({ lesson, index, status, open, onToggle }: { lesson: Lesson; 
 }
 
 function TipModal({ unit, onClose }: { unit: Unit; onClose: () => void }) {
+  const theme = useApp((s) => s.theme)
+  const panel = themedMotion(theme, useReducedMotion())
   return (
     <motion.div
-      className="fixed inset-0 z-50 grid place-items-center bg-ink/60 p-4 backdrop-blur-sm"
+      className={`fixed inset-0 z-50 grid place-items-center bg-ink/60 p-4 ${panel ? '' : 'backdrop-blur-sm'}`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      transition={panel?.transition}
       onClick={onClose}
     >
       <motion.div
-        initial={{ y: 40, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        exit={{ y: 40, opacity: 0 }}
-        transition={{ type: 'spring', damping: 22, stiffness: 260 }}
+        initial={panel?.enter ?? { y: 40, opacity: 0 }}
+        animate={{ y: 0, scale: 1, opacity: 1 }}
+        exit={panel?.enter ?? { y: 40, opacity: 0 }}
+        transition={panel?.transition ?? { type: 'spring', damping: 22, stiffness: 260 }}
         className="relative w-full max-w-lg overflow-hidden rounded-[32px] bg-paper p-8"
         onClick={(e) => e.stopPropagation()}
       >

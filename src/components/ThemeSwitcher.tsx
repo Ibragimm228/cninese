@@ -21,21 +21,35 @@ export function ThemeSwitcher() {
   }, [open])
 
   const pick = (id: ThemeId, e: MouseEvent) => {
-    const root = document.documentElement
-    root.style.setProperty('--reveal-x', `${e.clientX}px`)
-    root.style.setProperty('--reveal-y', `${e.clientY}px`)
+    if (id === theme) {
+      setOpen(false)
+      return
+    }
+    if (id === 'moli') {
+      const root = document.documentElement
+      root.style.setProperty('--reveal-x', e.detail ? `${e.clientX}px` : '50%')
+      root.style.setProperty('--reveal-y', e.detail ? `${e.clientY}px` : '50%')
+    }
     const apply = () => {
       setTheme(id)
       setOpen(false)
     }
     const still = matchMedia('(prefers-reduced-motion: reduce)').matches
     if (!document.startViewTransition || still) apply()
-    else document.startViewTransition(() => flushSync(apply))
+    else document.startViewTransition(() => {
+      flushSync(apply)
+      if (id === 'moli') return
+      for (const animation of document.getAnimations()) {
+        if (animation instanceof CSSAnimation && ['void-in', 'alt-fade', 'poster-wipe', 'manga-in'].includes(animation.animationName)) {
+          animation.finish()
+        }
+      }
+    })
   }
 
   return (
     <>
-      <div className="theme-backdrop" aria-hidden="true"><i /><i /><i /></div>
+      <div className="theme-backdrop" aria-hidden="true"><i /></div>
       <button type="button" className="theme-fab" onClick={() => setOpen(true)} aria-label={`Сменить дизайн. Сейчас: ${current.name}`} title="Сменить дизайн">
         <span aria-hidden="true">{current.hanzi}</span>
       </button>

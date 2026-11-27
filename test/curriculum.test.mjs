@@ -12,6 +12,21 @@ after(() => vite.close())
 const { allWords, allSentences, hskLevels, lessons, lessonById, sentenceById, tokenWord, units, wordById, wordsByLevel } =
   await vite.ssrLoadModule('/src/data/curriculum.ts')
 const { buildExam, examScale, examScore } = await vite.ssrLoadModule('/src/lib/exam.ts')
+const { themedMotion } = await vite.ssrLoadModule('/src/lib/theme.ts')
+
+test('alternative lesson motion uses short tweens and respects reduced motion', () => {
+  assert.equal(themedMotion('moli'), undefined)
+  for (const theme of ['void', 'poster', 'manga']) {
+    const { enter, transition } = themedMotion(theme)
+    assert.equal(transition.type, 'tween')
+    assert.ok(transition.duration >= .15 && transition.duration <= .4)
+    assert.ok(enter.y >= 0 && enter.y <= 8 && enter.scale >= .98 && enter.scale <= 1)
+    const reduced = themedMotion(theme, true)
+    assert.equal(reduced.transition.duration, 0)
+    assert.equal(reduced.enter.y, 0)
+    assert.equal(reduced.enter.scale, 1)
+  }
+})
 
 test('all three HSK lists have distinct entries and working lessons and sentences', () => {
   assert.deepEqual(hskLevels.map((level) => wordsByLevel[level].length), [150, 150, 300])
