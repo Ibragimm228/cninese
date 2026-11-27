@@ -74,7 +74,7 @@ export function SpeakEx({ ex, locked, onChange }: ExProps<Extract<Exercise, { ty
           )}
         </p>
         {!locked && !listening && (
-          <button type="button" className="text-sm font-semibold text-ink-soft underline underline-offset-4" onClick={() => onChange({ ok: true, solution: `${ex.hanzi} (${ex.pinyin})` })}>
+          <button type="button" className="text-sm font-semibold text-ink-soft underline underline-offset-4" onClick={() => onChange({ ok: true, skipped: true })}>
             Сейчас не могу говорить
           </button>
         )}

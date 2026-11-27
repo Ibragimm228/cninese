@@ -5,7 +5,7 @@ import { tokenWord } from '../../data/curriculum'
 import { toneColor, toneOf } from '../../lib/pinyin'
 import { useApp } from '../../lib/store'
 
-export type ExResult = { ok: boolean; solution?: string; mistakes?: number }
+export type ExResult = { ok: boolean; solution?: string; mistakes?: number; skipped?: boolean }
 
 export type ExProps<T> = {
   ex: T

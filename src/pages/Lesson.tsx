@@ -124,6 +124,11 @@ function LessonPlayer({
       next()
       return
     }
+    // a skipped exercise is neither right nor wrong: nothing is scored or rescheduled
+    if (pending_.skipped) {
+      next()
+      return
+    }
     setChecked(pending_)
     setAnswered((a) => a + 1)
     const ids = exerciseWordIds(ex)
