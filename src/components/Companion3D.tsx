@@ -46,7 +46,11 @@ export function Companion3D({
       .then(({ ChibiStage }) => {
         if (cancelled || !canvas.current) return
         stage.current = new ChibiStage(canvas.current, key.split(',') as CompanionId[], { tier, accent, pedestal, zoom, interactive, reducedMotion })
-        if (celebrateOnMount) stage.current.celebrate()
+        const made = stage.current
+        made.ready.then(
+          () => { if (!cancelled && celebrateOnMount) made.celebrate() },
+          () => { if (!cancelled) setFailed(true) },
+        )
       })
       .catch(() => setFailed(true))
     return () => {

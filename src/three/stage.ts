@@ -12,8 +12,8 @@ export type StageOptions = {
   pedestal?: boolean
   preserve?: boolean
   zoom?: number
-  /** tessellation scale, 1 = full; chosen from the device and cast size when omitted */
-  detail?: number
+  /** load the lighter models; chosen from the device and cast size when omitted */
+  lite?: boolean
 }
 
 export class ChibiStage {
@@ -37,6 +37,9 @@ export class ChibiStage {
   private observers: { disconnect: () => void }[] = []
   private canvas: HTMLCanvasElement
   private options: StageOptions
+  private generation = 0
+  /** settles once the cast has loaded and been drawn */
+  ready: Promise<void> = Promise.resolve()
 
   constructor(canvas: HTMLCanvasElement, ids: readonly CompanionId[], options: StageOptions = {}) {
     this.canvas = canvas
@@ -45,17 +48,16 @@ export class ChibiStage {
     this.renderer.setPixelRatio(options.preserve ? 1 : Math.min(window.devicePixelRatio, 2))
     this.renderer.shadowMap.enabled = true
     this.renderer.shadowMap.type = THREE.PCFSoftShadowMap
-    this.renderer.toneMapping = THREE.ACESFilmicToneMapping
-    this.renderer.toneMappingExposure = 0.95
+    this.renderer.toneMapping = THREE.NoToneMapping
 
     const pmrem = new THREE.PMREMGenerator(this.renderer)
     this.scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.04).texture
     this.scene.environmentIntensity = 0.55
     pmrem.dispose()
 
-    this.scene.add(new THREE.HemisphereLight('#ffffff', '#b9a7d8', 0.55))
-    const key = new THREE.DirectionalLight('#fff4e6', 2.4)
-    key.position.set(3.5, 7, 6)
+    // one white key at π: a toon surface facing it shows exactly its painted colour
+    const key = new THREE.DirectionalLight('#ffffff', Math.PI)
+    key.position.set(3, 6, 7)
     key.castShadow = true
     key.shadow.mapSize.set(1024, 1024)
     key.shadow.camera.left = -5
@@ -65,7 +67,7 @@ export class ChibiStage {
     key.shadow.bias = -0.0015
     key.shadow.radius = 6
     this.scene.add(key)
-    const rim = new THREE.DirectionalLight(options.accent ?? '#9fb8ff', 2.2)
+    const rim = new THREE.DirectionalLight(options.accent ?? '#9fb8ff', 0.5)
     rim.position.set(-5, 4, -6)
     this.scene.add(rim)
 
@@ -107,26 +109,29 @@ export class ChibiStage {
   }
 
   setCompanions(ids: readonly CompanionId[]) {
-    this.chibis.forEach((c) => this.turntable.remove(c.root))
-    const gap = 2.25
-    // a lone character gets every polygon; a line-up or a phone trades some away to stay smooth
+    const gap = 1.9
+    const generation = ++this.generation
+    // a lone character gets every polygon; a line-up or a phone loads the lighter models
     const small = typeof matchMedia === 'function' && matchMedia('(pointer: coarse), (max-width: 760px)').matches
-    const detail = this.options.detail ?? (small ? (ids.length > 1 ? 0.5 : 0.7) : ids.length > 2 ? 0.7 : 1)
-    this.chibis = ids.map((id, i) => {
-      const chibi = createChibi(id, this.options.reducedMotion, detail)
-      const offset = i - (ids.length - 1) / 2
-      chibi.root.position.x = offset * gap
-      const holder = new THREE.Group()
-      holder.position.set(offset * gap, 0, -Math.abs(offset) * 0.7)
-      holder.rotation.y = -offset * 0.22
-      chibi.root.position.x = 0
-      holder.add(chibi.root)
-      this.turntable.add(holder)
-      return { ...chibi, root: holder as THREE.Group, update: chibi.update, wave: chibi.wave, celebrate: chibi.celebrate, look: chibi.look }
+    const lite = this.options.lite ?? (small || ids.length > 2)
+    this.ready = Promise.all(ids.map((id) => createChibi(id, this.options.reducedMotion, lite))).then((cast) => {
+      if (generation !== this.generation || this.raf === -1) return
+      this.chibis.forEach((c) => this.turntable.remove(c.root))
+      this.chibis = cast.map((chibi, i) => {
+        const offset = i - (ids.length - 1) / 2
+        const holder = new THREE.Group()
+        holder.position.set(offset * gap, 0, -Math.abs(offset) * 0.5)
+        holder.rotation.y = -offset * 0.18
+        holder.add(chibi.root)
+        this.turntable.add(holder)
+        return { ...chibi, root: holder }
+      })
+      this.span = (ids.length - 1) * gap + 2.4
+      this.frame()
+      this.render()
+      this.start()
     })
-    this.span = (ids.length - 1) * gap + 2.9
-    this.frame()
-    this.render()
+    this.ready.catch(() => {})
   }
 
   setTier(tier: number) {
@@ -232,10 +237,10 @@ export class ChibiStage {
   /** Pulls the camera back just far enough to fit the cast in both directions. */
   private frame() {
     const tan = Math.tan(THREE.MathUtils.degToRad(13))
-    const fitHeight = 5.5 / (2 * tan)
+    const fitHeight = 4.1 / (2 * tan)
     const fitWidth = this.span / (2 * tan * this.camera.aspect)
-    this.camera.position.set(0, 2.25, Math.max(fitHeight, fitWidth) / (this.options.zoom ?? 1))
-    this.camera.lookAt(0, 1.62, 0)
+    this.camera.position.set(0, 2.0, Math.max(fitHeight, fitWidth) / (this.options.zoom ?? 1))
+    this.camera.lookAt(0, 1.6, 0)
   }
 
   private resize() {
@@ -293,11 +298,13 @@ export function portrait(id: CompanionId, size = 420, tier = 0) {
         canvas.width = canvas.height = size
         Object.assign(canvas.style, { position: 'fixed', left: '-9999px', width: `${size}px`, height: `${size}px` })
         document.body.append(canvas)
-        const stage = new ChibiStage(canvas, [id], { interactive: false, reducedMotion: true, preserve: true, zoom: 1.12, tier, detail: size > 512 ? 1 : 0.35 })
-        const url = stage.snapshot()
-        stage.dispose()
-        canvas.remove()
-        resolve(url)
+        const stage = new ChibiStage(canvas, [id], { interactive: false, reducedMotion: true, preserve: true, zoom: 1.12, tier, lite: size <= 512 })
+        stage.ready.then(() => {
+          const url = stage.snapshot()
+          stage.dispose()
+          canvas.remove()
+          resolve(url)
+        }, (error) => { stage.dispose(); canvas.remove(); reject(error) })
       } catch (error) {
         reject(error)
       }
