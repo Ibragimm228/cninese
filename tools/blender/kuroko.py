@@ -4,8 +4,8 @@ import math
 import numpy as np
 
 import anatomy as A
-from outfit import pipe
-from lib import Model, ball, chain, curve, lin, loft, merge, mixc, norm, oval, rigid, smooth, spline, sweep, transform, tube
+from outfit import folds, pipe
+from lib import text_shape, Model, ball, chain, curve, lin, loft, merge, mixc, norm, oval, rigid, smooth, spline, sweep, transform, tube
 
 SKIN, SKIN_SHADE = '#ffe3d2', '#f2b9a4'
 HAIR, HAIR_TIP, HAIR_DARK = '#8fd0f2', '#bfe8fb', '#5fa9d6'
@@ -15,8 +15,8 @@ def build(lod=0):
     m = Model('kuroko', lod)
     b = dict(A.BUILD)
     A.skeleton(m, b)
-    m.material('skin', SKIN, shade=SKIN_SHADE)
-    m.material('skin_shade', SKIN_SHADE)
+    m.material('skin', SKIN, shade=SKIN_SHADE, tint='#ffd3c8')
+    m.material('skin_shade', SKIN_SHADE, tint='#ffd3c8')
     m.material('hair', '#ffffff', shade=HAIR_DARK, gloss=0.6)
     to_world, tree = A.build_head(m, b)
     face = A.Face(m, to_world, tree)
@@ -27,6 +27,7 @@ def build(lod=0):
     A.draw_brows(face, eye, dict(len=0.11, gap=0.045, w=0.012, color='#6aa9cf', arch=0.004, in_y=-0.004, out_y=-0.006))
     A.draw_mouth(face, dict(y=-0.243, w=0.05, bend=0.001, color='#a8584f'))
     A.draw_nose(face)
+    A.fringe_shadow(face, FRINGE, SKIN)
     hair(m, to_world)
     m.material('jersey', '#ffffff', shade='#c9cfe6')
     m.material('black', '#23232b')
@@ -43,6 +44,11 @@ def build(lod=0):
         A.leg(m, b, s, top=0.95, bottom=b['ankle'] + 0.2)
         A.leg(m, b, s, mat='jersey', r=(0.118, 0.1, 0.073, 0.086, 0.058), top=b['ankle'] + 0.27, bottom=b['ankle'] - 0.02)
         shoe(m, b, s)
+        a = np.linspace(0, math.tau, 28, endpoint=False)
+        for y in np.linspace(b['ankle'] + 0.12, b['ankle'] + 0.265, 6):
+            ring = np.stack([s * j['hip'][0] + 0.064 * np.sin(a), np.full(28, y), -0.012 + 0.066 * np.cos(a)], axis=1)
+            m.add('body', pipe(ring, 0.006, 6), 'jersey', rigid(f'shin_{n}'))
+        m.add('body', tube([((s * 0.02, 1.47, 0.142), 0.006, 0.006), ((s * 0.03, 1.4, 0.158), 0.006, 0.006), ((s * 0.034, 1.33, 0.16), 0.008, 0.008)], 8, 8), 'black', rigid('hips'), subdiv=0)
         wr, d = j['wrist'] * f, j['dir'] * f
         m.add('body', tube([(wr - d * 0.085, 0.05, 0.05), (wr - d * 0.075, 0.057, 0.057), (wr - d * 0.02, 0.055, 0.055), (wr - d * 0.01, 0.047, 0.047)], 24, 8), 'black', rigid(f'forearm_{n}'))
         # armhole piping
@@ -91,7 +97,23 @@ def uniform(m, b):
         c[(np.abs(p[:, 0]) > rx * 0.83) & ~side & (p[:, 1] < 1.95)] = lin('#e0303a')
         c[p[:, 1] < 1.225] = lin('#23232b')
         return c
-    m.add('body', loft(np.array(rings), True, (True, False)), 'jersey', skin, color=paint, subdiv=2)
+    pt = lambda x, y, sg=1: np.array([x, y, float(front(np.array([x]), np.array([y]), sg, 0.0)[0])])  # noqa: E731
+    marks = []
+    for s in (1, -1):
+        for sg in (1, -1):
+            marks += [(pt(s * 0.16, 1.52, sg), pt(s * 0.04, 1.6, sg), 0.02), (pt(s * 0.17, 1.6, sg), pt(s * 0.07, 1.74, sg), 0.016),
+                      (pt(s * 0.19, 1.93, sg), pt(s * 0.1, 1.8, sg), 0.018), (pt(s * 0.12, 1.24, sg), pt(s * 0.1, 1.42, sg), 0.016),
+                      (pt(s * 0.03, 1.24, sg), pt(s * 0.05, 1.36, sg), 0.012)]
+    m.add('body', loft(np.array(rings), True, (True, False)), 'jersey', skin, color=paint, subdiv=2, post=folds(marks))
+
+    def text(s, x, y, size, sg, bold=0.02):
+        v, f = text_shape(s, size, bold)
+        px, py = x + v[:, 0] * sg, y + v[:, 1]
+        m.add('body', (np.stack([px, py, front(px, py, sg, 0.007)], axis=1), f), 'print', skin, subdiv=0, keep_normals=(0, 0, sg))
+    text('SEIRIN', 0, 1.915, 0.058, 1)
+    text('11', 0, 1.72, 0.24, 1, 0.035)
+    text('11', 0, 1.74, 0.32, -1, 0.035)
+    text('KUROKO', 0, 1.99, 0.05, -1)
     # V collar
     a = np.linspace(0, math.tau, 48, endpoint=False)
     dip = 0.085 * np.clip(np.cos(a), 0, 1) ** 3
@@ -99,13 +121,6 @@ def uniform(m, b):
     m.add('body', pipe(col, 0.016), 'black', skin)
     m.add('body', pipe(col + [0, -0.024, 0.006], 0.009), 'red', skin)
     # number 11, front and back
-    for sign, (y0, y1), w in ((1, (1.62, 1.84), 0.036), (-1, (1.6, 1.9), 0.046)):
-        for x in (-0.055, 0.055):
-            decal(m, x - w / 2, x + w / 2, y0, y1, 'print', sign, skin)
-            decal(m, x - w / 2 - 0.03 * sign, x - w / 2 + 0.004, y1 - 0.045, y1, 'print', sign, skin)
-    # team name
-    for i, x in enumerate(np.linspace(-0.11, 0.11, 6)):
-        decal(m, x - 0.014, x + 0.014, 1.9, 1.935, 'print', 1, skin, nx=3, ny=3)
 
     # shorts
     def trim(p):
@@ -191,12 +206,15 @@ def pipe_on_ball(p, c, w=0.007):
     return loft(rows, closed=False)
 
 
+FRINGE = [(-58, 6, 0.15), (-44, 14, 0.14), (-30, 4, 0.15), (-15, 12, 0.13), (-2, -6, 0.15), (13, 9, 0.13), (27, 2, 0.15), (41, 13, 0.14), (56, 5, 0.15)]
+
+
 def hair(m, to_world):
     rnd = np.random.RandomState(7)
     A.scalp(m, to_world, lambda a: 0.2 - 0.33 * smooth(0.5, 1.6, abs(math.remainder(a, math.tau))), color=lin(HAIR))
     cols = (HAIR, HAIR_TIP)
     # fringe: jagged spikes over the forehead, the longest between the eyes
-    for yaw, tip, wd in [(-58, 6, 0.15), (-44, 14, 0.14), (-30, 4, 0.15), (-15, 12, 0.13), (-2, -6, 0.15), (13, 9, 0.13), (27, 2, 0.15), (41, 13, 0.14), (56, 5, 0.15)]:
+    for yaw, tip, wd in FRINGE:
         A.lock(m, 'hair', to_world, [(yaw * 0.5, 74, 1.06), (yaw * 0.8, 52, 1.13), (yaw, 30, 1.13), (yaw + rnd.uniform(-5, 5), tip, 1.09)], wd, 0.04, colors=cols)
     # crown: long clumps that fall in every direction and kick out at the tips
     for i, yaw in enumerate(np.linspace(-180, 180, 17)[:-1] + 11):
@@ -205,6 +223,13 @@ def hair(m, to_world):
         kick = 1.2 + 0.1 * (i % 2) + rnd.uniform(0, 0.05)
         A.lock(m, 'hair', to_world, [(yaw * 0.9, 88, 1.04), (yaw, 68, 1.17), (yaw + rnd.uniform(-6, 6), 40, 1.2), (yaw + rnd.uniform(-9, 9), low, kick)],
                0.22, 0.05, colors=cols, n=22)
+    # a shorter layer between them, so the crown reads as overlapping tiers
+    for i, yaw in enumerate(np.linspace(-180, 180, 15)[:-1] - 4):
+        front_k = max(0.0, math.cos(math.radians(yaw)))
+        if front_k > 0.6:
+            continue
+        A.lock(m, 'hair', to_world, [(yaw, 80, 1.08), (yaw + rnd.uniform(-5, 5), 58, 1.24), (yaw + rnd.uniform(-8, 8), 30 - 20 * (1 - front_k), 1.27 + rnd.uniform(0, 0.06))],
+               0.17, 0.045, colors=cols, n=18)
     # back and sides: a second, lower layer down to the nape
     for i, yaw in enumerate(np.linspace(62, 298, 14)):
         back = max(0.0, -math.cos(math.radians(yaw)))

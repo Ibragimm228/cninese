@@ -5,7 +5,7 @@ import numpy as np
 
 import anatomy as A
 from lib import ball, lin, merge, rigid, transform, tube
-from outfit import Body, back_hair, box, pipe, tufts, with_sway
+from outfit import Body, back_hair, box, fan, folds, pipe, tufts, with_sway
 
 SKIN, SKIN_SHADE = '#fbe7dc', '#e6b5a6'
 HAIR, HAIR_TIP, HAIR_DARK = '#3a3a52', '#5a5a7c', '#26263a'
@@ -17,12 +17,13 @@ def build(lod=0):
     b = dict(A.BUILD)
     A.skeleton(m, b)
     m.bone('sway_coat', (0, 1.3, 0), 'hips')
-    m.material('skin', SKIN, shade=SKIN_SHADE)
-    m.material('skin_shade', SKIN_SHADE)
+    m.material('skin', SKIN, shade=SKIN_SHADE, tint='#ffd3c8')
+    m.material('skin_shade', SKIN_SHADE, tint='#ffd3c8')
     m.material('hair', '#ffffff', shade=HAIR_DARK, gloss=0.6)
     m.material('coat', '#ffffff')
     m.material('sleeve', COAT)
     m.material('fur', '#f6f2ea')
+    m.material('trim', TRIM)
     m.material('black', '#1c1c24')
     m.material('gem', '#3fc1d6')
     m.material('gold', '#e8b84a')
@@ -55,7 +56,7 @@ def hair(m, to_world):
     A.scalp(m, to_world, lambda a: 0.25 - 0.36 * A.smooth(0.5, 1.6, abs(math.remainder(a, math.tau))), color=lin(HAIR))
     cols = (HAIR, HAIR_TIP)
     # combed straight back from the hairline, over the crown and down the back of the head
-    for i, yaw in enumerate(np.linspace(-78, 78, 13)):
+    for i, yaw in enumerate(np.linspace(-78, 78, 17)):
         y2 = 180 - yaw * 0.8
         A.lock(m, 'hair', to_world, [(yaw, 47, 1.05), (yaw, 66, 1.17), (yaw * 0.7, 86, 1.21), (y2, 62, 1.2), (y2 + rnd.uniform(-6, 6), 22 + rnd.uniform(-8, 8), 1.18 + 0.1 * (i % 2))],
                0.2, 0.05, colors=cols, n=24)
@@ -84,8 +85,23 @@ def outfit(m, b):
         c[y < 0.5] = lin(TRIM)
         c[(y > 1.5) & (y < 1.58)] = lin('#1c1c24')
         return c
-    coat.add(m, 'coat', skin, color=paint, n=128, rows=72, subdiv=1, ripple=(8, 0.045))
+    marks = []
+    for s in (1, -1):
+        for sg in (1, -1):
+            marks += fan(coat, (s * 0.15, 1.5), [(s * 0.2, 1.05), (s * 0.1, 1.15), (s * 0.24, 1.25)], 0.02, sg)
+            marks += fan(coat, (s * 0.17, 1.6), [(s * 0.08, 1.72), (s * 0.1, 1.62)], 0.016, sg)
+            marks += fan(coat, (s * 0.2, 1.95), [(s * 0.11, 1.8), (s * 0.16, 1.74)], 0.018, sg)
+            marks += fan(coat, (s * 0.26, 0.52), [(s * 0.24, 0.8)], 0.022, sg) + fan(coat, (s * 0.12, 0.52), [(s * 0.13, 0.74)], 0.018, sg)
+    coat.add(m, 'coat', skin, color=paint, n=128, rows=72, subdiv=1, ripple=(8, 0.045), post=folds(marks))
+    # raised edging down both sides of the opening
+    for s in (1, -1):
+        ys = np.linspace(0.5, 2.06, 40)
+        gap = np.where(ys > 1.56, 0.012 + (ys - 1.56) * 0.17, 0.012 + (1.56 - ys) * 0.1) + 0.024
+        m.add('body', pipe(np.stack([s * gap, ys, coat.z(s * gap, ys, 1, 0.003)], axis=1), 0.008, 6, False), 'trim', skin)
     coat.decal(m, -0.04, 0.04, 1.495, 1.585, 'gold', skin, off=0.012, nx=4, ny=4)
+    zb = float(coat.z(np.array([0.0]), np.array([1.54]), 1, 0.016)[0])
+    m.add('body', pipe(np.array([[-0.046, 1.49, zb], [0.046, 1.49, zb], [0.046, 1.59, zb], [-0.046, 1.59, zb]]), 0.008, 6), 'gold', skin, subdiv=0)
+    m.add('body', pipe(np.array([[0.0, 1.492, zb + 0.004], [0.0, 1.588, zb + 0.004]]), 0.006, 6, False), 'gold', skin, subdiv=0)
     # inverted cross on the back
     coat.decal(m, -0.03, 0.03, 1.2, 1.95, 'print', skin, sign=-1, nx=4, ny=14)
     coat.decal(m, -0.14, 0.14, 1.36, 1.43, 'print', skin, sign=-1, nx=10, ny=3)

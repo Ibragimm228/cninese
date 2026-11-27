@@ -64,12 +64,41 @@ function load(id: CompanionId, lite: boolean) {
   return hit
 }
 
-/** Two flat tones, the shaded one tinted violet: cel shading instead of a smooth falloff. Owned by its material so the stage can dispose it. */
-function toonRamp() {
-  const ramp = new THREE.DataTexture(new Uint8Array([196, 176, 208, 255, 196, 176, 208, 255, 255, 255, 255, 255, 255, 255, 255, 255]), 4, 1, THREE.RGBAFormat)
-  ramp.minFilter = ramp.magFilter = THREE.NearestFilter
-  ramp.needsUpdate = true
-  return ramp
+const TOON_PARS = /* glsl */ `
+varying vec3 vViewPosition;
+uniform vec3 uTint;
+struct ToonMaterial { vec3 diffuseColor; };
+// two flat tones with a hard edge; cast shadows fall into the same shade tone instead of going grey
+void RE_Direct_Toon( const in IncidentLight directLight, const in vec3 geometryPosition, const in vec3 geometryNormal, const in vec3 geometryViewDir, const in vec3 geometryClearcoatNormal, const in ToonMaterial material, inout ReflectedLight reflectedLight ) {
+	float open = clamp( max( directLight.color.r, max( directLight.color.g, directLight.color.b ) ) / PI, 0.0, 1.0 );
+	float lit = smoothstep( 0.0, 0.035, dot( geometryNormal, directLight.direction ) ) * smoothstep( 0.42, 0.58, open );
+	reflectedLight.directDiffuse += mix( uTint, vec3( 1.0 ), lit ) * material.diffuseColor;
+}
+void RE_IndirectDiffuse_Toon( const in vec3 irradiance, const in vec3 geometryPosition, const in vec3 geometryNormal, const in vec3 geometryViewDir, const in vec3 geometryClearcoatNormal, const in ToonMaterial material, inout ReflectedLight reflectedLight ) {}
+#define RE_Direct RE_Direct_Toon
+#define RE_IndirectDiffuse RE_IndirectDiffuse_Toon
+`
+
+const TOON_RIM = /* glsl */ `
+	{
+		vec3 rimView = normalize( vViewPosition );
+		float rimEdge = smoothstep( 0.6, 0.66, 1.0 - max( dot( normal, rimView ), 0.0 ) );
+		float rimSide = smoothstep( 0.05, 0.3, normal.y * 0.7 - normal.x * 0.7 );
+		outgoingLight += ( diffuseColor.rgb * 0.3 + 0.14 ) * rimEdge * rimSide;
+	}
+	#include <opaque_fragment>
+`
+
+function toonMaterial(color: THREE.Color, vertexColors: boolean, tint: string) {
+  const m = new THREE.MeshToonMaterial({ color, vertexColors })
+  m.onBeforeCompile = (shader) => {
+    shader.uniforms.uTint = { value: new THREE.Color(tint) }
+    shader.fragmentShader = shader.fragmentShader
+      .replace('#include <lights_toon_pars_fragment>', TOON_PARS)
+      .replace('#include <opaque_fragment>', TOON_RIM)
+  }
+  m.customProgramCacheKey = () => 'cel'
+  return m
 }
 
 function outlineMaterial(width: number) {
@@ -88,7 +117,7 @@ function stylise(root: THREE.Object3D) {
     const mesh = o as THREE.SkinnedMesh
     if (!mesh.isMesh) return
     const src = mesh.material as THREE.MeshStandardMaterial
-    const data = src.userData as { kind?: string; outline?: number; shade?: string }
+    const data = src.userData as { kind?: string; outline?: number; tint?: string }
     const vertexColors = !!mesh.geometry.attributes.color
     mesh.frustumCulled = false
     if (data.kind === 'unlit') {
@@ -97,8 +126,9 @@ function stylise(root: THREE.Object3D) {
     }
     mesh.material = data.kind === 'metal'
       ? new THREE.MeshStandardMaterial({ color: src.color, vertexColors, metalness: 0.9, roughness: 0.3 })
-      : new THREE.MeshToonMaterial({ color: src.color, vertexColors, gradientMap: toonRamp() })
+      : toonMaterial(src.color, vertexColors, data.tint ?? '#b9a9d4')
     mesh.castShadow = true
+    mesh.receiveShadow = data.kind !== 'metal'
     if (data.outline && mesh.isSkinnedMesh) {
       const hull = new THREE.SkinnedMesh(mesh.geometry, ink)
       hull.bind(mesh.skeleton, mesh.bindMatrix)

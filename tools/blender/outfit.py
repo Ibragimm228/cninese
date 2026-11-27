@@ -3,7 +3,7 @@ import math
 
 import numpy as np
 
-from lib import TAU, ball, lin, loft, merge, norm, oval, smooth, spline
+from lib import TAU, ball, lin, loft, merge, norm, oval, smooth, spline, text_shape
 
 
 def pipe(path, r, k=8, closed=True):
@@ -59,7 +59,7 @@ class Body:
         self.y0, self.y1, self.p = st[0, 0], st[-1, 0], p
 
     def add(self, m, mat, skin, y0=None, y1=None, color=None, n=56, rows=36, caps=(True, False), subdiv=2, ripple=None,
-            inflate=0.0, group='body'):
+            inflate=0.0, group='body', post=None):
         y0, y1 = self.y0 if y0 is None else y0, self.y1 if y1 is None else y1
         a = np.arange(n) / n * TAU
         rings = []
@@ -70,11 +70,28 @@ class Body:
                 # pleats that deepen towards the hem
                 o = o * (1 + ripple[1] * (y1 - y) / (y1 - y0) * np.cos(ripple[0] * a))[:, None]
             rings.append(np.column_stack([o[:, 0], np.full(n, y), cz + o[:, 1]]))
-        m.add(group, loft(np.array(rings), True, caps), mat, skin, color=color, subdiv=subdiv)
+        def shade(p, col):
+            out = col.copy()
+            if ripple:
+                # the inside of every pleat sits in shadow, widening towards the hem
+                rx, rz, cz = self.f(np.clip(p[:, 1], self.y0, self.y1)).T
+                ang = np.arctan2(p[:, 0] / rx, (p[:, 2] - cz) / rz)
+                depth = (y1 - p[:, 1]) / (y1 - y0)
+                out[(np.cos(ripple[0] * ang) < -0.35 - 0.5 * (1 - depth)) & (depth > 0.18), :3] *= np.array([0.66, 0.62, 0.8])
+            return post(p, out) if post else out
+        m.add(group, loft(np.array(rings), True, caps), mat, skin, color=color, subdiv=subdiv, post=shade)
 
     def z(self, x, y, sign=1, off=0.006):
         rx, rz, cz = self.f(np.clip(y, self.y0, self.y1)).T
         return cz + sign * (rz * (1 - np.clip(np.abs(x) / rx, 0, 1) ** self.p) ** (1 / self.p) + off)
+
+    def pt(self, x, y, sign=1, off=0.0):
+        return np.array([x, y, float(self.z(np.array([x]), np.array([y]), sign, off)[0])])
+
+    def text(self, m, s, x, y, size, mat, skin, sign=1, bold=0.0, off=0.006, group='body'):
+        v, f = text_shape(s, size, bold)
+        px, py = x + v[:, 0] * sign, y + v[:, 1]
+        m.add(group, (np.stack([px, py, self.z(px, py, sign, off)], axis=1), f), mat, skin, subdiv=0, keep_normals=(0, 0, sign))
 
     def decal(self, m, x0, x1, y0, y1, mat, skin, sign=1, off=0.006, nx=6, ny=10, group='body', color=None):
         xs, ys = np.meshgrid(np.linspace(x0, x1, nx), np.linspace(y0, y1, ny))
@@ -99,3 +116,25 @@ def back_hair(m, A, to_world, rnd, dark, base, n=14, low=-30, drop=26, kick=1.1,
         A.lock(m, 'hair', to_world, [(yaw, 52, 1.1), (yaw, 20, 1.15), (yaw + rnd.uniform(-5, 5), -10, 1.13),
                                      (yaw + rnd.uniform(-8, 8), end, kick + (0.12 if i % 3 == 0 else 0.03) * (kick > 1.05))],
                width, 0.045, colors=(dark, base), n=20)
+
+
+def folds(marks, tint=(0.66, 0.62, 0.8)):
+    """Painted fold shadows: each mark is a wedge from p0 (widest, `w`) tapering to a point at p1."""
+    tint = np.asarray(tint)
+
+    def post(p, col):
+        out = col.copy()
+        for p0, p1, w in marks:
+            p0, p1 = np.asarray(p0, dtype=float), np.asarray(p1, dtype=float)
+            ln = np.linalg.norm(p1 - p0)
+            d = (p1 - p0) / ln
+            t = np.clip((p - p0) @ d / ln, 0, 1)
+            dist = np.linalg.norm(p - (p0 + np.outer(t * ln, d)), axis=1)
+            out[dist < w * (1 - t) ** 0.8 + 0.001, :3] *= tint
+        return out
+    return post
+
+
+def fan(body, origin, ends, w=0.02, sign=1):
+    """Fold wedges radiating from one tension point on a garment; points are (x, y) on its front or back."""
+    return [(body.pt(*origin, sign, 0.0), body.pt(*e, sign, 0.0), w) for e in ends]

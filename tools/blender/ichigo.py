@@ -5,7 +5,7 @@ import numpy as np
 
 import anatomy as A
 from lib import Model, ball, lin, loft, norm, rigid, transform, tube
-from outfit import Body, pipe, with_sway
+from outfit import fan, folds, Body, pipe, with_sway
 
 SKIN, SKIN_SHADE = '#ffdcc4', '#eeab8e'
 HAIR, HAIR_TIP, HAIR_DARK = '#ff8a1f', '#ffb84d', '#e2601a'
@@ -17,8 +17,8 @@ def build(lod=0):
     b = dict(A.BUILD)
     A.skeleton(m, b)
     m.bone('sway_hakama', (0, 1.3, 0), 'hips')
-    m.material('skin', SKIN, shade=SKIN_SHADE)
-    m.material('skin_shade', SKIN_SHADE)
+    m.material('skin', SKIN, shade=SKIN_SHADE, tint='#ffd3c8')
+    m.material('skin_shade', SKIN_SHADE, tint='#ffd3c8')
     m.material('hair', '#ffffff', shade=HAIR_DARK, gloss=0.6)
     m.material('robe', '#ffffff')
     m.material('sleeve', ROBE)
@@ -36,10 +36,14 @@ def build(lod=0):
     A.draw_brows(face, eye, dict(len=0.125, gap=0.016, w=0.017, color='#c9591a', arch=-0.004, in_y=-0.03, out_y=0.016, taper=(0.9, 0.3)))
     A.draw_mouth(face, dict(y=-0.245, w=0.06, bend=-0.004, color='#9a4a3c'))
     A.draw_nose(face)
+    A.fringe_shadow(face, FRINGE, SKIN, drop=0.035)
     hair(m, to_world)
     outfit(m, b)
     sword(m)
     return m
+
+
+FRINGE = [(-60, 10, 0.13), (-46, 22, 0.14), (-31, 12, 0.13), (-17, 26, 0.12), (-4, 6, 0.14), (10, 24, 0.12), (24, 14, 0.13), (38, 28, 0.13), (52, 16, 0.14), (64, 8, 0.12)]
 
 
 def hair(m, to_world):
@@ -57,7 +61,7 @@ def hair(m, to_world):
             A.lock(m, 'hair', to_world, [(yaw, pitch, 1.0), (yaw + rnd.uniform(-6, 6), p1 + lean * 0.5, 1.0 + length * 0.55), (yaw + rnd.uniform(-12, 12), p1 + lean, 1.0 + length + rnd.uniform(0, 0.1))],
                    0.2, 0.06, colors=cols, n=14, root=1.0, tip_p=0.9)
     # ragged fringe
-    for yaw, tip, wd in [(-60, 10, 0.13), (-46, 22, 0.14), (-31, 12, 0.13), (-17, 26, 0.12), (-4, 6, 0.14), (10, 24, 0.12), (24, 14, 0.13), (38, 28, 0.13), (52, 16, 0.14), (64, 8, 0.12)]:
+    for yaw, tip, wd in FRINGE:
         A.lock(m, 'hair', to_world, [(yaw * 0.5, 72, 1.07), (yaw * 0.85, 52, 1.16), (yaw + rnd.uniform(-4, 4), 36, 1.15), (yaw + rnd.uniform(-9, 9), tip, 1.13)], wd, 0.04, colors=cols)
     for s in (1, -1):
         A.lock(m, 'hair', to_world, [(s * 66, 48, 1.1), (s * 72, 22, 1.14), (s * 72, 0, 1.1), (s * 68, -18, 1.08)], 0.11, 0.035, colors=cols)
@@ -77,7 +81,17 @@ def outfit(m, b):
         c[front & (x < v)] = lin(SKIN)
         c[(~front) & (y > 2.15)] = lin('#fbfaf5')
         return c
-    top.add(m, 'robe', skin, color=paint, n=128, rows=64, subdiv=1)
+    marks = []
+    for s in (1, -1):
+        for sg in (1, -1):
+            marks += fan(top, (s * 0.17, 1.6), [(s * 0.06, 1.72), (s * 0.1, 1.84)], 0.016, sg) + fan(top, (s * 0.21, 1.96), [(s * 0.12, 1.8)], 0.018, sg)
+    top.add(m, 'robe', skin, color=paint, n=128, rows=64, subdiv=1, post=folds(marks, (1.9, 1.85, 2.3)))
+    # the two collars as raised edges: white under-robe inside, black robe outside
+    for s in (1, -1):
+        ys = np.linspace(1.62, 2.14, 24)
+        for off, mat, r in ((0.0, 'white', 0.007), (0.04, 'sleeve', 0.008)):
+            x = (ys - 1.6) * 0.21 + off
+            m.add('body', pipe(np.stack([s * x, ys, top.z(s * x, ys, 1, 0.009)], axis=1), r, 6, False), mat, skin)
     # sash and knot
     sash = Body([(1.4, 0.228, 0.168, 0.0), (1.5, 0.215, 0.156, 0.0), (1.6, 0.212, 0.152, 0.0)])
     sash.add(m, 'white', skin, n=48, rows=6, caps=(False, False), subdiv=1, inflate=0.006)

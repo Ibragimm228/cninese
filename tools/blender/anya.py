@@ -5,7 +5,7 @@ import numpy as np
 
 import anatomy as A
 from lib import Model, ball, lin, merge, rigid, transform, tube
-from outfit import Body, pipe, with_sway
+from outfit import Body, fan, folds, pipe, with_sway
 
 SKIN, SKIN_SHADE = '#ffe6d8', '#f4b9a8'
 HAIR, HAIR_TIP, HAIR_DARK = '#f6a3c2', '#ffcfe0', '#de7ba4'
@@ -18,8 +18,8 @@ def build(lod=0):
              hip_x=0.092, shoulder_x=0.235, upper=0.34, fore=0.31, head_scale=1.1)
     A.skeleton(m, b)
     m.bone('sway_skirt', (0, 1.05, 0), 'hips')
-    m.material('skin', SKIN, shade=SKIN_SHADE)
-    m.material('skin_shade', SKIN_SHADE)
+    m.material('skin', SKIN, shade=SKIN_SHADE, tint='#ffd3c8')
+    m.material('skin_shade', SKIN_SHADE, tint='#ffd3c8')
     m.material('hair', '#ffffff', shade=HAIR_DARK, gloss=0.6)
     m.material('dress', '#ffffff')
     m.material('white', '#fdfcf8')
@@ -36,10 +36,14 @@ def build(lod=0):
     A.draw_brows(face, eye, dict(len=0.08, gap=0.04, w=0.011, color='#d77a9f', arch=0.008, in_y=0.0, out_y=-0.004))
     A.draw_mouth(face, dict(y=-0.25, w=0.045, bend=0.007, color='#b0554f', open_h=0.07))
     A.draw_nose(face, y=-0.185)
-    A.draw_blush(face, 0.185, -0.185, 0.06, 0.032, lines=3)
+    A.draw_blush(face, 0.185, -0.185, 0.06, 0.032)
+    A.fringe_shadow(face, FRINGE, SKIN, drop=0.04)
     hair(m, to_world)
     outfit(m, b)
     return m
+
+
+FRINGE = [(-56, 14, 0.16), (-42, 17, 0.16), (-28, 19, 0.16), (-14, 21, 0.15), (-2, 26, 0.12), (10, 21, 0.15), (24, 19, 0.16), (38, 17, 0.16), (52, 14, 0.16)]
 
 
 def hair(m, to_world):
@@ -47,7 +51,7 @@ def hair(m, to_world):
     A.scalp(m, to_world, lambda a: 0.2 - 0.4 * A.smooth(0.5, 1.5, abs(math.remainder(a, math.tau))), color=lin(HAIR))
     cols = (HAIR, HAIR_TIP)
     # blunt fringe, parted a little off-centre
-    for yaw, tip, wd in [(-56, 14, 0.16), (-42, 17, 0.16), (-28, 19, 0.16), (-14, 21, 0.15), (-2, 26, 0.12), (10, 21, 0.15), (24, 19, 0.16), (38, 17, 0.16), (52, 14, 0.16)]:
+    for yaw, tip, wd in FRINGE:
         A.lock(m, 'hair', to_world, [(yaw * 0.5, 76, 1.06), (yaw * 0.85, 54, 1.14), (yaw, 34, 1.14), (yaw + rnd.uniform(-2, 2), tip, 1.09)], wd, 0.045, colors=cols, tip_p=3.0)
     # the bob: long clumps from the crown to the jaw, tips tucking under
     for i, yaw in enumerate(np.linspace(60, 300, 19)):
@@ -85,7 +89,11 @@ def outfit(m, b):
         c[(y < 0.9)] = lin(GOLD)
         c[(y > 1.2) & (y < 1.25)] = lin(GOLD)
         return c
-    dress.add(m, 'dress', skin, color=paint, n=96, rows=44, subdiv=1, ripple=(12, 0.07))
+    marks = []
+    for s in (1, -1):
+        for sg in (1, -1):
+            marks += fan(dress, (s * 0.13, 1.27), [(s * 0.05, 1.36), (s * 0.08, 1.44)], 0.013, sg) + fan(dress, (s * 0.16, 1.6), [(s * 0.09, 1.5)], 0.014, sg)
+    dress.add(m, 'dress', skin, color=paint, n=128, rows=56, subdiv=1, ripple=(12, 0.07), post=folds(marks, (1.9, 1.85, 2.3)))
     # petticoat peeking out under the hem
     under = Body([(0.82, 0.34, 0.31, 0.0), (1.0, 0.25, 0.22, 0.0)])
     under.add(m, 'white', skin, n=96, rows=8, caps=(True, False), subdiv=1, ripple=(12, 0.05))

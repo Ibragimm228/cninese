@@ -6,6 +6,8 @@ import numpy as np
 from lib import (TAU, ball, chain, curve, disc, lin, loft, merge, mirror, mixc, norm, oval, project, rigid, smooth,
                  spline, strip, sweep, transform, tube)
 
+FOLD = np.array([0.66, 0.62, 0.8])  # painted fold shadows multiply the cloth colour by this
+
 # joint heights of the default build; characters override what they need
 BUILD = dict(
     ankle=0.13, knee=0.72, hip=1.33, waist=1.56, chest=1.88, shoulder=2.09, neck=2.2, head=2.68,
@@ -119,7 +121,9 @@ def build_head(m, b, skin='skin', ears=True):
             m.add('body', (to_world(inner[0]), inner[1]), 'skin_shade', rigid('head'), subdiv=1)
     neck = tube([((0, b['neck'] - 0.1, -0.015), 0.1, 0.095), ((0, b['neck'] + 0.03, 0.0), 0.085, 0.085),
                  ((0, c[1] - 0.26 * hs, 0.02), 0.082, 0.085), ((0, c[1] - 0.16 * hs, 0.03), 0.08, 0.08)], 24)
-    m.add('body', neck, skin, torso_skin(b, 0.05), subdiv=1)
+    # the chin's shadow on the neck, painted so it reads from every angle
+    chin = lambda p: np.where(((p[:, 1] > b['neck'] - 0.045 + 6.0 * p[:, 0] ** 2) & (p[:, 2] > -0.03))[:, None], lin('#ffd3c8'), np.ones(4))  # noqa: E731
+    m.add('body', neck, skin, torso_skin(b, 0.05), color=chin, subdiv=2)
     return to_world, tree
 
 
@@ -187,7 +191,7 @@ def draw_eyes(face, e):
         # iris, clipped to the lids
         ir = e['iris']
         cx, cy = e['x'] + ir.get('dx', 0.0), e['y'] + ir.get('dy', 0.0)
-        dv, df = disc((0, 0, 0), ir['rx'], ir['ry'], 48, 14)
+        dv, df = disc((0, 0, 0), ir['rx'], ir['ry'], 96, 22)
         r = np.sqrt((dv[:, 0] / ir['rx']) ** 2 + (dv[:, 1] / ir['ry']) ** 2)
         yy = dv[:, 1] / ir['ry']
         top, mid, low = lin(ir['top']), lin(ir['mid']), lin(ir['low'])
@@ -195,6 +199,13 @@ def draw_eyes(face, e):
         col = mixc(col, lin(ir.get('ring', ir['top'])), smooth(0.82, 0.97, r))
         # a pale crescent at the bottom of the iris
         col = mixc(col, lin(ir.get('glow', ir['low'])), smooth(0.25, 0.75, r) * smooth(-0.15, -0.8, yy) * 0.8)
+        # fine radial fibres, a dark limbal ring, a halo round the pupil and the lid's shadow across the top
+        th_ = np.arctan2(dv[:, 1], dv[:, 0])
+        fibre = (np.sin(th_ * 24) > 0.55) * smooth(0.45, 0.6, r) * (1 - smooth(0.8, 0.9, r))
+        col = mixc(col, lin(ir.get('ring', ir['top'])), fibre * 0.35)
+        col = mixc(col, lin(ir.get('glow', ir['low'])), (np.abs(r - ir.get('pupil', 0.42) - 0.07) < 0.035) * 0.45)
+        col = mixc(col, lin(ir.get('pupil_color', '#10121c')), smooth(0.93, 0.99, r) * 0.9)
+        col = mixc(col, lin(ir.get('pupil_color', '#10121c')), (yy > 0.52 - 0.12 * (dv[:, 0] / ir['rx']) ** 2) * 0.55)
         px, py = cx + dv[:, 0], cy + dv[:, 1]
         hi = np.interp(px, up[:, 0], up[:, 1])
         lw = np.interp(px, lo[:, 0], lo[:, 1])
@@ -272,7 +283,8 @@ def draw_nose(face, y=-0.165, color='#d99a84', w=0.012):
 
 def draw_blush(face, x, y, rx, ry, color='#ff8f9c', strength=0.55, lines=0):
     for s in (1, -1):
-        v, f = disc((s * x, y, 0), rx, ry, 28, 6)
+        ang = np.arange(32) / 32 * TAU
+        v, f = loft(np.array([np.stack([s * x + np.cos(ang) * rx * k, y + np.sin(ang) * ry * k, 0 * ang], axis=1) for k in np.linspace(1, 0.02, 8)]), True, (False, False))
         r = np.sqrt(((v[:, 0] - s * x) / rx) ** 2 + ((v[:, 1] - y) / ry) ** 2)
         col = np.tile(lin(color), (len(v), 1))
         col[:, 3] = (1 - smooth(0.15, 1.0, r)) * strength
@@ -280,6 +292,17 @@ def draw_blush(face, x, y, rx, ry, color='#ff8f9c', strength=0.55, lines=0):
         for k in range(lines):
             ox = (k - (lines - 1) / 2) * rx * 0.42
             face.line('face', np.array([[s * x + ox - 0.008, y - ry * 0.4], [s * x + ox + 0.008, y + ry * 0.4]]), 0.005, lin(color, 1.0), 2, n=6, taper=(0.3, 0.3))
+
+
+def fringe_shadow(face, fringe, skin, tint='#ffd3c8', drop=0.045, top=0.3):
+    """Shadow the fringe throws on the forehead; `fringe` is the same (yaw, tip pitch, width) list the locks use."""
+    tips = [(0.3 * math.sin(math.radians(y)) * math.cos(math.radians(t)) * 1.05, 0.352 * math.sin(math.radians(t)) * 1.09 - drop) for y, t, _w in fringe]
+    x = np.linspace(-0.285, 0.285, 120)
+    low = np.min([ty + np.abs(x - tx) * 1.7 for tx, ty in tips], axis=0)
+    low = np.minimum(low, top - 0.01)
+    col = lin(skin) * lin(tint)
+    col[3] = 1
+    face.band('face', np.stack([x, np.full_like(x, top)], axis=1), np.stack([x, low], axis=1), col, 0.5, rows=6)
 
 
 # ---------------------------------------------------------------- hair
@@ -290,7 +313,7 @@ def shell(to_world, yaw, pitch, r):
 
 
 def lock(m, group, to_world, pts, width, thick=0.035, mat='hair', bone='head', n=18, k=12, root=0.55, tip_p=1.6,
-         colors=None, twist=0.0, belly=0.22, subdiv=1, raw=False, skin=None):
+         colors=None, twist=0.0, belly=0.22, subdiv=1, raw=False, skin=None, split=None):
     """One clump of anime hair: a lens-shaped ribbon that ends in a point."""
     ctrl = np.asarray(pts, dtype=float)
     path = curve(ctrl if raw else shell(to_world, ctrl[:, 0], ctrl[:, 1], ctrl[:, 2]), n)
@@ -316,8 +339,40 @@ def lock(m, group, to_world, pts, width, thick=0.035, mat='hair', bone='head', n
         root_c, tip_c = lin(colors[0]), lin(colors[1])
         tt = np.concatenate([np.repeat(t, k), [0, 1]])
         col = mixc(root_c, tip_c, smooth(0.1, 1.0, tt))
-    m.add(group, (v, f), mat, skin or rigid(bone), color=col, subdiv=subdiv)
+        # the rims of each clump are a shade deeper, so neighbouring clumps read as separate strokes
+        rim = np.concatenate([np.tile(np.abs(np.cos(a)) ** 3, n), [0, 0]])
+        col = mixc(col, root_c * np.array([0.62, 0.6, 0.72, 1]), rim * 0.55)
+    m.add(group, (v, f), mat, skin or rigid(bone), color=col, subdiv=subdiv, post=gloss(to_world) if colors else None)
+    split = (2 if width >= 0.1 else 0) if split is None else split
+    if split and not raw:
+        rnd = np.random.RandomState(int(abs(ctrl).sum() * 977) % 100000)
+        deg = math.degrees(width / 0.3)
+        for i in range(split):
+            c2 = ctrl.copy()
+            side_k = (i / max(split - 1, 1) * 2 - 1) if split > 1 else 0
+            c2[:, 0] += side_k * deg * rnd.uniform(0.22, 0.34) * np.linspace(0.4, 1, len(c2))
+            c2[:, 2] += 0.022 + 0.02 * np.linspace(0, 1, len(c2)) * rnd.uniform(0.2, 1)
+            c2[-1] = c2[-2] + (c2[-1] - c2[-2]) * rnd.uniform(0.55, 0.95)
+            lock(m, group, to_world, c2, width * rnd.uniform(0.26, 0.36), thick * 0.55, mat, bone, n, 8, root, tip_p, colors, twist, belly, subdiv, False, skin, 0)
     return path
+
+
+def gloss(to_world, lo=0.14, hi=0.19, strength=0.42):
+    """Zigzag band of light around the crown, the way anime hair is highlighted."""
+    c = to_world(np.zeros(3))
+    hs = np.linalg.norm(to_world(np.array([0, 1.0, 0])) - c)
+
+    def post(p, col):
+        q = (p - c) / hs
+        yaw = np.arctan2(q[:, 0], q[:, 2])
+        saw = np.abs((yaw * 13 / math.pi) % 2 - 1)
+        y = q[:, 1] - 0.05 * saw
+        rad = np.sqrt((q[:, 0] / 0.3) ** 2 + (q[:, 2] / 0.322) ** 2)
+        k = ((y > lo) & (y < hi) & (rad < 1.5)) * strength
+        out = col.copy()
+        out[:, :3] = col[:, :3] + (1 - col[:, :3]) * k[:, None]
+        return out
+    return post
 
 
 def scalp(m, to_world, hairline, mat='hair', inflate=0.022, n=56, rows=14, color=None, group='hair'):
@@ -332,7 +387,7 @@ def scalp(m, to_world, hairline, mat='hair', inflate=0.022, n=56, rows=14, color
         rings.append(from_centre + np.array([0, inflate * smooth(0.0, 0.36, y)[0] * 0, 0]))
     v, f = loft(np.array(rings), True, (False, True))
     v[-1] = [0, 0.36 + inflate, 0]
-    m.add(group, (to_world(v), f), mat, rigid('head'), color=color, subdiv=1)
+    m.add(group, (to_world(v), f), mat, rigid('head'), color=color, subdiv=1, post=gloss(to_world) if color is not None else None)
 
 
 # ---------------------------------------------------------------- limbs
@@ -344,7 +399,16 @@ def arm(m, b, side, skin='skin', group='body', r=(0.078, 0.066, 0.06, 0.047), sh
     st = [(sh - d * 0.07, r[0] * 0.55 * shoulder, r[0] * 0.55 * shoulder), (sh - d * 0.02, r[0] * 1.08 * shoulder, r[0] * 1.1 * shoulder),
           (sh + d * 0.09, r[0] * 1.04, r[0] * 1.06), (sh + d * 0.25, r[1] * 1.05, r[1] * 1.08), (el - d * 0.03, r[1] * 0.93, r[1]),
           (el + d * 0.08, r[2] * 1.08, r[2] * 1.12), (el + d * 0.2, r[2], r[2] * 1.02), (wr - d * 0.05, r[3] * 1.02, r[3]), (wr + d * 0.02, r[3] * 0.92, r[3] * 0.8)]
-    m.add(group, tube(st, 24, 30), skin, arm_skin(b, side), subdiv=2)
+    def creases(p, col):
+        s = (p - sh) @ d
+        side_v = np.cross(d, [0, 0, 1.0])
+        ang = np.arctan2((p - sh) @ side_v, p[:, 2] - sh[2])
+        out = col.copy()
+        for at, ph, w in ((b['upper'] - 0.035, 0.0, 0.016), (b['upper'] + 0.03, 1.4, 0.014), (b['upper'] + b['fore'] - 0.07, 2.6, 0.012), (0.1, 3.9, 0.014)):
+            k = (np.abs(s - at - 0.018 * np.sin(ang * 2 + ph)) < w * np.clip(np.cos(ang - ph), 0, 1) ** 0.5)
+            out[k, :3] *= FOLD
+        return out
+    m.add(group, tube(st, 32, 40), skin, arm_skin(b, side), subdiv=2, post=creases if skin != 'skin' else None)
 
 
 def finger(base, d, inward, length, r, curl, spread=0.0, n=10, k=12, side_axis=None):
@@ -381,13 +445,21 @@ def hand(m, b, side, pose='relaxed', skin='skin', group='body', scale=1.0, nails
     palm = tube([((0, 0.02, 0), 0.03, 0.042), ((0, -0.03, 0.002), 0.027, 0.056), ((0, -0.085, 0.004), 0.026, 0.064),
                  ((0, -0.128, 0.004), 0.022, 0.06), ((0, -0.142, 0.004), 0.012, 0.05)], 20, 12, ref=(1, 0, 0), p=2.6)
     shapes = [palm]
+    nails_out = []
     lengths = [0.108, 0.118, 0.11, 0.09]
     for i in range(4):
         z = 0.046 - i * 0.0285
         base = np.array([-0.002, -0.128 + abs(i - 1.2) * -0.0 - (0.006 if i == 3 else 0), z + 0.004])
         shapes.append(finger(base, d, inward, lengths[i], 0.0145 - (0.0015 if i == 3 else 0), curls[i], spread=(1.5 - i) * 0.07 * (0.3 if pose in ('fist', 'grip') else 1), side_axis=fwd))
         if nails:
-            pass
+            tipv = shapes[-1][0]
+            end, prev = tipv[9 * 12:10 * 12].mean(axis=0), tipv[7 * 12:8 * 12].mean(axis=0)
+            nd = norm(end - prev)
+            back = norm(-(inward - nd * (inward @ nd)))
+            c = end - nd * 0.006 + back * 0.0095
+            nail = ball((0, 0, 0), 1, 10, 6, (0.0035, 0.0105, 0.0075))
+            ang = math.atan2(nd[0], -nd[1])
+            nails_out.append((transform(nail[0], c, (0, 0, ang)), nail[1]))
     tb = np.array([-0.006, -0.045, 0.05])
     td = norm(np.array([-0.25, -0.62, 0.72]))
     shapes.append(finger(tb, td, norm(np.array([-0.8, -0.2, -0.55])), 0.1, 0.0165, thumb_curl, side_axis=np.cross(td, [1, 0, 0])))
@@ -399,6 +471,14 @@ def hand(m, b, side, pose='relaxed', skin='skin', group='body', scale=1.0, nails
         v, f = mirror((v, f))
     v = transform(v, j['wrist'] * np.array([side, 1, 1]), (0, 0, side * b['arm_tilt']))
     m.add(group, (v, f), skin, rigid(f'hand_{n}'), subdiv=2)
+    if nails_out:
+        nv, nf = merge(*nails_out)
+        nv = nv * scale
+        if side < 0:
+            nv, nf = mirror((nv, nf))
+        nv = transform(nv, j['wrist'] * np.array([side, 1, 1]), (0, 0, side * b['arm_tilt']))
+        m.material('nail', '#ffd9d2', tint='#ffd3c8', outline=False)
+        m.add(group, (nv, nf), 'nail', rigid(f'hand_{n}'), subdiv=1)
 
 
 def leg(m, b, side, mat='skin', group='body', r=(0.118, 0.1, 0.073, 0.08, 0.05), top=None, bottom=None, subdiv=2):
@@ -415,7 +495,14 @@ def leg(m, b, side, mat='skin', group='body', r=(0.118, 0.1, 0.073, 0.08, 0.05),
     zz = np.interp(yy, [b['ankle'], b['knee'], b['hip']], [-0.012, 0.006, 0.0]) - 0.012 * np.exp(-((yy - (b['knee'] - 0.2)) / 0.14) ** 2)
     rr = rad(-yy)
     rings = np.array([np.column_stack([x + o[:, 0], np.full(24, yy[i]), zz[i] + o[:, 1]]) for i, o in enumerate(oval(rr[i, 0], rr[i, 1], 24) for i in range(len(yy)))])
-    m.add(group, loft(rings[::-1]), mat, leg_skin(b, side), subdiv=subdiv)
+    def creases(p, col):
+        ang = np.arctan2(p[:, 0] - x, p[:, 2])
+        out = col.copy()
+        for at, ph, w in ((b['knee'] + 0.05, 0.0, 0.016), (b['knee'] - 0.04, 1.0, 0.013), (b['knee'] + 0.13, -0.9, 0.012), (b['ankle'] + 0.2, 0.4, 0.014), (b['ankle'] + 0.3, 2.2, 0.012), (b['hip'] - 0.16, 0.6 * side, 0.016)):
+            k = np.abs(p[:, 1] - at - 0.02 * np.sin(ang * 2 + ph)) < w * np.clip(np.cos(ang - ph), 0, 1) ** 0.5
+            out[k, :3] *= FOLD
+        return out
+    m.add(group, loft(rings[::-1]), mat, leg_skin(b, side), subdiv=subdiv, post=None)
     return rad
 
 

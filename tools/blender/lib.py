@@ -256,7 +256,7 @@ class Model:
     def bone(self, name, pos, parent=None):
         self.bones[name] = (np.asarray(pos, dtype=float), parent)
 
-    def material(self, name, color, kind='toon', outline=True, shade=None, alpha=False, gloss=0.0):
+    def material(self, name, color, kind='toon', outline=True, shade=None, alpha=False, gloss=0.0, tint=None):
         if name in self.materials:
             return name
         m = bpy.data.materials.new(name)
@@ -271,14 +271,16 @@ class Model:
         m['gloss'] = gloss
         if shade:
             m['shade'] = shade
+        if tint:
+            m['tint'] = tint
         self.materials[name] = m
         return name
 
-    def add(self, group, shape, mat, skin, color=None, subdiv=1, smooth_shade=True, keep_normals=None):
+    def add(self, group, shape, mat, skin, color=None, subdiv=1, smooth_shade=True, keep_normals=None, post=None):
         """color: None, an (N, 4) per-vertex array or a function of positions returning one."""
         verts, faces = shape
         self.parts.append(dict(group=group, verts=np.asarray(verts, dtype=float), faces=faces, mat=mat, skin=skin,
-                               color=color, subdiv=subdiv, smooth=smooth_shade, face_dir=keep_normals))
+                               color=color, subdiv=subdiv, smooth=smooth_shade, face_dir=keep_normals, post=post))
 
     # -- build
     def _mesh(self, part, index):
@@ -328,6 +330,11 @@ class Model:
         if callable(part['color']):
             col = np.broadcast_to(np.asarray(part['color'](p), dtype=np.float32), (n, 4))
             attr.data.foreach_set('color', np.ascontiguousarray(col).reshape(-1))
+        if part['post']:
+            cur = np.zeros(n * 4, dtype=np.float32)
+            attr.data.foreach_get('color', cur)
+            cur = np.asarray(part['post'](p, cur.reshape(-1, 4).astype(float)), dtype=np.float32)
+            attr.data.foreach_set('color', np.ascontiguousarray(cur).reshape(-1))
         me.color_attributes.active_color = attr
         me.color_attributes.render_color_index = 0
         for poly in me.polygons:
@@ -417,11 +424,41 @@ class Model:
 def project(tree, pts, direction=(0, 0, -1), lift=0.002, origin_shift=2.0):
     """Drop points onto a surface along `direction`, then lift them back towards the viewer."""
     d = Vector(direction).normalized()
+    pts = np.asarray(pts, dtype=float)
+    hits, depth = [], []
+    for p in pts:
+        hit, _n, _i, dist = tree.ray_cast(Vector(p) - d * origin_shift, d)
+        hits.append(hit)
+        if hit is not None:
+            depth.append(dist - origin_shift)
+    # points that fall just off the silhouette snap to the nearest surface at the depth their neighbours landed on
+    reach = float(np.median(depth)) if depth else 0.0
     out = []
-    for p in np.asarray(pts, dtype=float):
-        o = Vector(p) - d * origin_shift
-        hit, _n, _i, _dist = tree.ray_cast(o, d)
+    for p, hit in zip(pts, hits):
         if hit is None:
-            hit = tree.find_nearest(Vector(p))[0]
+            hit = tree.find_nearest(Vector(p) + d * reach)[0]
         out.append(np.array(hit) - np.array(d) * lift)
     return np.array(out)
+
+
+def text_shape(text, size=0.1, bold=0.0, cuts=2):
+    """Flat lettering centred on the origin: (verts (N, 2), faces)."""
+    cu = bpy.data.curves.new('text', 'FONT')
+    cu.body, cu.size, cu.align_x, cu.align_y, cu.offset, cu.resolution_u = text, size, 'CENTER', 'CENTER', bold * size, 3
+    o = bpy.data.objects.new('text', cu)
+    bpy.context.scene.collection.objects.link(o)
+    me = bpy.data.meshes.new_from_object(o.evaluated_get(bpy.context.evaluated_depsgraph_get()))
+    bm = bmesh.new()
+    bm.from_mesh(me)
+    bmesh.ops.triangulate(bm, faces=bm.faces)
+    if cuts:
+        bmesh.ops.subdivide_edges(bm, edges=bm.edges, cuts=cuts, use_grid_fill=True)
+        bmesh.ops.triangulate(bm, faces=bm.faces)
+    bm.verts.ensure_lookup_table()
+    v = np.array([[q.co.x, q.co.y] for q in bm.verts])
+    f = [tuple(q.index for q in face.verts) for face in bm.faces]
+    bm.free()
+    bpy.data.objects.remove(o, do_unlink=True)
+    bpy.data.meshes.remove(me)
+    bpy.data.curves.remove(cu)
+    return v, f

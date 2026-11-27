@@ -47,7 +47,7 @@ export class ChibiStage {
     this.renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true, preserveDrawingBuffer: options.preserve })
     this.renderer.setPixelRatio(options.preserve ? 1 : Math.min(window.devicePixelRatio, 2))
     this.renderer.shadowMap.enabled = true
-    this.renderer.shadowMap.type = THREE.PCFSoftShadowMap
+    this.renderer.shadowMap.type = THREE.PCFShadowMap
     this.renderer.toneMapping = THREE.NoToneMapping
 
     const pmrem = new THREE.PMREMGenerator(this.renderer)
@@ -57,20 +57,17 @@ export class ChibiStage {
 
     // one white key at π: a toon surface facing it shows exactly its painted colour
     const key = new THREE.DirectionalLight('#ffffff', Math.PI)
-    key.position.set(3, 6, 7)
+    key.position.set(4.6, 7.4, 4.8)
     key.castShadow = true
-    key.shadow.mapSize.set(1024, 1024)
+    key.shadow.mapSize.set(2048, 2048)
     key.shadow.camera.left = -5
     key.shadow.camera.right = 5
     key.shadow.camera.top = 6
     key.shadow.camera.bottom = -2
-    key.shadow.bias = -0.0015
-    key.shadow.radius = 6
+    key.shadow.bias = -0.0008
+    key.shadow.normalBias = 0.006
+    key.shadow.radius = 2
     this.scene.add(key)
-    const rim = new THREE.DirectionalLight(options.accent ?? '#9fb8ff', 0.5)
-    rim.position.set(-5, 4, -6)
-    this.scene.add(rim)
-
     const ground = new THREE.Mesh(new THREE.CircleGeometry(9, 48), new THREE.ShadowMaterial({ opacity: 0.22 }))
     ground.rotation.x = -Math.PI / 2
     ground.receiveShadow = true
@@ -202,7 +199,6 @@ export class ChibiStage {
       m.geometry.dispose()
       const material = m.material as THREE.MeshPhysicalMaterial
       material.map?.dispose()
-      ;(material as unknown as THREE.MeshToonMaterial).gradientMap?.dispose()
       material.dispose()
     })
     this.scene.environment?.dispose()
