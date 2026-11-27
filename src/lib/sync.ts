@@ -42,9 +42,11 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
 const snapshot = () => JSON.parse(JSON.stringify(useApp.getState())) as Record<string, unknown>
 
 let timer: ReturnType<typeof setTimeout> | undefined
+/** Whose progress this tab holds; another tab may have signed in as someone else since. */
+let owner = session()?.token
 
 export async function push(): Promise<void> {
-  if (!API || !session()) return
+  if (!API || !owner || session()?.token !== owner) return
   try {
     const body = { state: snapshot(), week: weekKeys(), base: Number(localStorage.getItem(BASE) ?? 0) }
     const { updatedAt } = await call<{ updatedAt: number }>('/api/progress', { method: 'PUT', body: JSON.stringify(body) })
@@ -68,6 +70,7 @@ export async function pull(): Promise<void> {
 export async function signIn(mode: 'login' | 'register', name: string, password: string): Promise<Session> {
   const s = await call<Session>(`/api/${mode}`, { method: 'POST', body: JSON.stringify({ name, password }) })
   localStorage.setItem(KEY, JSON.stringify(s))
+  owner = s.token
   await pull()
   window.dispatchEvent(new Event(SESSION_EVENT))
   return s
@@ -77,8 +80,11 @@ export async function signOut(): Promise<void> {
   clearTimeout(timer)
   // save what has not been uploaded yet, because the local copy is cleared below
   await push().catch(() => {})
-  await call('/api/logout', { method: 'POST' }).catch(() => {})
-  localStorage.removeItem(KEY)
+  if (session()?.token === owner) {
+    await call('/api/logout', { method: 'POST' }).catch(() => {})
+    localStorage.removeItem(KEY)
+  }
+  owner = undefined
   localStorage.removeItem(BASE)
   // the account's progress stays on the server and must not be left for the next person on this browser
   const { theme, reset } = useApp.getState()
@@ -95,6 +101,10 @@ export function leagueTable(): Promise<LeagueRow[]> {
 export function startSync() {
   if (!API) return
   void pull().catch(() => {})
+  // the account changed in another tab: start again from what that tab stored
+  window.addEventListener('storage', (e) => {
+    if (e.key === KEY && session()?.token !== owner) location.reload()
+  })
   useApp.subscribe((s, prev) => {
     if (!session() || (s.xp === prev.xp && s.words === prev.words && s.lessons === prev.lessons && s.streak === prev.streak)) return
     clearTimeout(timer)
