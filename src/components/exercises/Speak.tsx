@@ -21,6 +21,8 @@ export function SpeakEx({ ex, locked, onChange }: ExProps<Extract<Exercise, { ty
     if (locked) return
     if (listening) return session.current?.stop()
     window.speechSynthesis?.cancel()
+    onChange(null)
+    setHeard(null)
     const s = listenOnce()
     session.current = s
     setListening(true)
