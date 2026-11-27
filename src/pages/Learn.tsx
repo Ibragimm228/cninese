@@ -3,7 +3,7 @@ import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { Button } from '../components/Button'
 import { CompanionCard } from '../components/Companion'
-import { ArrowRight, BookIcon, CheckIcon, LockIcon, StarIcon, TrophyIcon } from '../components/icons'
+import { BookIcon, CheckIcon, LockIcon, StarIcon, TrophyIcon } from '../components/icons'
 import { RightRail } from '../components/RightRail'
 import { lessons, lessonsOfUnit, units, wordById } from '../data/curriculum'
 import type { Lesson, Unit } from '../data/types'
@@ -28,10 +28,9 @@ export default function Learn() {
         <div className="learn-hero-grid" aria-hidden="true" />
         <span className="learn-hero-hanzi" aria-hidden="true">学</span>
         <div className="learn-hero-copy">
-          <p className="studio-label"><span className="status-dot" /> {next ? 'Следующий шаг' : 'Маршрут завершён'}</p>
           <h2>{next ? next.title : 'HSK 1 пройден!'}</h2>
           <Link className="editorial-cta" to={next ? `/lesson/${next.id}` : '/practice'}>
-            {next ? 'К уроку' : 'Практика'} <span><ArrowRight size={18} /></span>
+            {next ? 'К уроку' : 'Практика'}
           </Link>
         </div>
         <span className="learn-hero-index" aria-hidden="true">学 / STUDY</span>
@@ -82,7 +81,7 @@ function UnitSection({
       <div className="unit-heading">
         <div className="unit-stamp" style={{ color: unit.color }} aria-hidden="true">{unit.hanzi[0]}</div>
         <div>
-          <p className="studio-label">Юнит {String(unit.index + 1).padStart(2, '0')} · HSK 1</p>
+          <p className="studio-label">Юнит {unit.index + 1}</p>
           <h3>{unit.title}</h3>
         </div>
         <button type="button" className="editorial-icon" onClick={onTip} aria-label={`Подсказка: ${unit.title}`} title="Подсказка"><BookIcon size={19} /></button>
@@ -120,7 +119,7 @@ function LessonRow({ lesson, index, status, open, onToggle }: { lesson: Lesson; 
             <div className="lesson-details">
               <p>{description}</p>
               {rec && <p>Лучшая точность: {Math.round(rec.bestAccuracy * 100)}%</p>}
-              {status !== 'locked' && <Link className="editorial-cta" to={`/lesson/${lesson.id}`}>{status === 'done' ? 'Повторить +5 XP' : `Начать +${lesson.kind === 'test' ? 25 : 15} XP`} <span><ArrowRight size={16} /></span></Link>}
+              {status !== 'locked' && <Link className="editorial-cta" to={`/lesson/${lesson.id}`}>{status === 'done' ? 'Повторить +5 XP' : `Начать +${lesson.kind === 'test' ? 25 : 15} XP`}</Link>}
             </div>
           </motion.div>
         )}
@@ -149,7 +148,7 @@ function TipModal({ unit, onClose }: { unit: Unit; onClose: () => void }) {
         <span className="pointer-events-none absolute -right-6 -top-10 font-brush text-[200px] leading-none opacity-10" style={{ color: unit.color }}>
           {unit.hanzi[0]}
         </span>
-        <p className="studio-label text-red">Юнит {unit.index + 1} · Грамматика</p>
+        <p className="studio-label text-red">Юнит {unit.index + 1}, грамматика</p>
         <h3 className="mt-2 font-display text-3xl font-bold">{unit.tip.title}</h3>
         <p className="mt-4 text-lg leading-relaxed text-ink-2">{unit.tip.body}</p>
         <div className="mt-6 grid grid-cols-3 gap-2 sm:grid-cols-4">

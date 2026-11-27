@@ -25,7 +25,7 @@ export default function Tones() {
   const s = SYLLABLES[syl]
   return (
     <div className="mx-auto max-w-[1100px] px-4 pt-6 md:px-8 md:pt-10">
-      <PageHeader kicker="声调 · Фонетика" title="Тоны" />
+      <PageHeader title="Тоны" />
 
       <div className="mb-6 flex flex-wrap gap-2">
         {SYLLABLES.map((x, i) => (
@@ -41,7 +41,6 @@ export default function Tones() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: i * 0.06 }}
-            whileHover={{ y: -4 }}
             onClick={() => void speak(s.hanzi[i], 0.7)}
             className="card3d flex flex-col items-center p-5"
           >
@@ -61,12 +60,12 @@ export default function Tones() {
         {TONE_INFO.map((t) => (
           <div key={t.n} className="flex items-start gap-3 rounded-2xl bg-paper-2 p-4">
             <span className="grid size-9 shrink-0 place-items-center rounded-xl font-display font-bold text-white" style={{ background: t.color }}>{t.n}</span>
-            <p className="text-ink-2"><b>{t.name} тон</b> — {t.desc}</p>
+            <p className="text-ink-2"><b>{t.name} тон:</b> {t.desc}</p>
           </div>
         ))}
         <div className="flex items-start gap-3 rounded-2xl bg-paper-2 p-4 md:col-span-2">
           <span className="grid size-9 shrink-0 place-items-center rounded-xl bg-ink-soft font-display font-bold text-white">5</span>
-          <p className="text-ink-2"><b>Нейтральный тон</b> — короткий и лёгкий, без знака над гласной: 吗 ma, 呢 ne, 的 de. Правило: два третьих тона подряд → первый читается как второй (你好 ní hǎo).</p>
+          <p className="text-ink-2"><b>Нейтральный тон:</b> короткий и лёгкий, без знака над гласной: 吗 ma, 呢 ne, 的 de. Правило: два третьих тона подряд → первый читается как второй (你好 ní hǎo).</p>
         </div>
       </div>
 
@@ -113,8 +112,7 @@ function ToneQuiz() {
       <span className="pointer-events-none absolute -right-8 -top-10 font-brush text-[200px] leading-none text-white/5">听</span>
       <div className="relative flex flex-wrap items-center justify-between gap-4">
         <div>
-          <p className="font-display text-xs font-semibold uppercase tracking-[0.25em] text-gold">Тренажёр</p>
-          <h2 className="mt-1 font-display text-3xl font-bold">Угадай тон</h2>
+          <h2 className="font-display text-3xl font-bold">Угадай тон</h2>
         </div>
         <div className="flex items-center gap-4 font-display text-sm">
           <span>Верно: <b className="text-jade">{score.ok}</b>/{score.total}</span>

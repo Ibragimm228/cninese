@@ -72,12 +72,11 @@ export default function Exam() {
   if (!started)
     return (
       <div className="mx-auto max-w-[1100px] px-4 pt-6 md:px-8 md:pt-10">
-        <PageHeader kicker="考试 · Экзамен" title="Пробный HSK 1" />
+        <PageHeader title="Пробный HSK 1" />
         <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr]">
           <div className="exam-hero relative overflow-hidden rounded-[32px] bg-ink p-8 text-paper md:p-10">
             <span className="pointer-events-none absolute -right-6 -top-10 font-brush text-[220px] leading-none text-red/25">考</span>
-            <p className="font-display text-xs font-semibold uppercase tracking-[0.25em] text-gold">Формат как на экзамене</p>
-            <h2 className="mt-3 max-w-md font-display text-3xl font-bold leading-tight md:text-4xl">200 баллов. Проходной — 120.</h2>
+            <h2 className="max-w-md font-display text-3xl font-bold leading-tight md:text-4xl">200 баллов, проходной 120</h2>
             <ul className="mt-6 space-y-2 text-paper/70">
               <li>· {hasChineseVoice() ? '12 заданий на аудирование' : 'Аудирование: нет китайского голоса'}</li>
               <li>· 16 заданий на чтение</li>
@@ -102,7 +101,7 @@ export default function Exam() {
             </div>
             <p className="mt-4 text-ink-soft">{known} / {allWords.length} слов · {coverage}%</p>
             <Link to="/learn" className="mt-6 inline-block font-display text-sm font-bold uppercase tracking-wider text-red">
-              Продолжить курс →
+              Продолжить курс
             </Link>
           </div>
         </div>

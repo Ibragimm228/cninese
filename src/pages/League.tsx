@@ -7,7 +7,7 @@ import { useApp } from '../lib/store'
 import { leagueTable, session, syncAvailable, type LeagueRow } from '../lib/sync'
 import { useEffect, useState } from 'react'
 
-const BOTS = ['Аня 🐼', 'Lǐ Wěi', 'Дмитрий', 'Мария К.', 'Wáng Fāng', 'Тимур', 'Олег', 'Zhāng Lì', 'Катя', 'Артём', 'Софья', 'Chén Jié', 'Ильяс', 'Полина']
+const BOTS = ['Аня', 'Lǐ Wěi', 'Дмитрий', 'Мария К.', 'Wáng Fāng', 'Тимур', 'Олег', 'Zhāng Lì', 'Катя', 'Артём', 'Софья', 'Chén Jié', 'Ильяс', 'Полина']
 
 function seeded(seed: number) {
   let x = seed
@@ -46,12 +46,12 @@ export default function League() {
   return (
     <div className="mx-auto flex max-w-[1100px] gap-10 px-4 pt-6 md:px-8 md:pt-10">
       <div className="min-w-0 flex-1">
-        <PageHeader kicker="联赛 · Неделя" title="Лига Нефрита">
+        <PageHeader title="Лига Нефрита">
           <span className="rounded-full bg-paper-2 px-4 py-2 font-display text-sm font-semibold">Осталось {daysLeft} дн.</span>
         </PageHeader>
         <div className="mode-card mb-6 flex items-center gap-4 overflow-hidden rounded-3xl p-5 text-white" style={{ '--m': '#22a06b', '--m-shadow': '#17784f' } as React.CSSProperties}>
           <span className="font-brush text-6xl">玉</span>
-          <p className="mode-desc font-display text-lg font-bold text-white">Топ-5 → Лига Золота</p>
+          <p className="mode-desc font-display text-lg font-bold text-white">Топ-5 переходят в Лигу Золота</p>
         </div>
         <ol className="league-list overflow-hidden rounded-3xl border-2 border-paper-3 bg-card">
           {rows.map((r, i) => (

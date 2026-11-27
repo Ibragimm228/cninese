@@ -43,7 +43,7 @@ export function RightRail() {
               {xpToday}
               <span className="text-base text-ink-soft"> / {s.dailyGoal} XP</span>
             </p>
-            <p className="text-sm text-ink-soft">{pct >= 1 ? '完成 · Готово' : `Осталось ${Math.max(0, s.dailyGoal - xpToday)} XP`}</p>
+            <p className="text-sm text-ink-soft">{pct >= 1 ? 'Готово' : `Осталось ${Math.max(0, s.dailyGoal - xpToday)} XP`}</p>
           </div>
         </div>
       </section>
@@ -77,14 +77,11 @@ export function RightRail() {
 
       <section className="overflow-hidden rounded-3xl bg-ink p-5 text-paper">
         <div className="flex items-start justify-between">
-          <div>
-            <p className="font-display text-xs uppercase tracking-[0.2em] text-gold">Лига Нефрита</p>
-            
-          </div>
+          <h3 className="font-display text-base font-bold">Лига Нефрита</h3>
           <span className="font-brush text-5xl leading-none text-red">赛</span>
         </div>
         <Link to="/league" className="mt-4 inline-flex text-sm font-bold uppercase tracking-wider text-gold hover:underline">
-          Открыть таблицу →
+          Открыть таблицу
         </Link>
       </section>
 

@@ -28,7 +28,7 @@ export default function Practice() {
   return (
     <div className="mx-auto flex max-w-[1100px] gap-10 px-4 pt-6 md:px-8 md:pt-10">
       <div className="min-w-0 flex-1">
-        <PageHeader kicker="练习 · Тренировка" title="Практика" />
+        <PageHeader title="Практика" />
         <div className="grid gap-4 sm:grid-cols-2">
           {modes.map((m, i) => (
             <motion.button
@@ -41,12 +41,11 @@ export default function Practice() {
               className={`mode-card group relative overflow-hidden rounded-[28px] p-6 text-left text-white transition-transform active:translate-y-1 disabled:opacity-45 ${m.big ? 'sm:col-span-2 sm:p-8' : ''}`}
               style={{ '--m': m.color, '--m-shadow': m.shadow } as React.CSSProperties}
             >
-              <span className="mode-hanzi absolute -bottom-6 -right-2 font-brush text-[130px] leading-none text-white/20 transition-transform duration-500 group-hover:scale-110 group-hover:-rotate-6">
+              <span className="mode-hanzi absolute -bottom-6 -right-2 font-brush text-[130px] leading-none text-white/20">
                 {m.hanzi}
               </span>
               <h3 className={`relative font-display font-bold ${m.big ? 'text-3xl' : 'text-xl'}`}>{m.title}</h3>
               <p className="mode-desc relative mt-1 text-white/85">{m.desc}</p>
-              <span className="mode-go relative mt-6 grid size-10 place-items-center rounded-full bg-white/20 text-lg transition-transform duration-300 group-hover:translate-x-1 group-hover:-rotate-45" aria-hidden="true">→</span>
             </motion.button>
           ))}
         </div>

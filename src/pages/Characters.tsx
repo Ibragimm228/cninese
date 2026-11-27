@@ -27,7 +27,7 @@ export default function Characters() {
 
   return (
     <div className="mx-auto max-w-[1100px] px-4 pt-6 md:px-8 md:pt-10">
-      <PageHeader kicker="汉字 · Словарь" title="Иероглифы">
+      <PageHeader title="Иероглифы">
         <div className="font-display text-sm font-semibold text-ink-soft">
           Изучено <span className="text-2xl text-ink">{learned}</span> / {total}
         </div>
@@ -63,7 +63,6 @@ export default function Characters() {
                   <motion.button
                     key={w.id}
                     layout
-                    whileHover={{ y: -4 }}
                     onClick={() => setOpen(w)}
                     className={clsx('card3d relative flex flex-col items-center px-2 pb-3 pt-4', !words[w.id] && 'opacity-70')}
                   >

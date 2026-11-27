@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom'
 import { Companion3D } from '../components/Companion3D'
-import { ArrowRight } from '../components/icons'
 import { Logo } from '../components/Logo'
 import { companions } from '../data/companions'
 import { useApp } from '../lib/store'
@@ -21,7 +20,7 @@ export default function LandingStage() {
         <span className="stage-hanzi" aria-hidden="true">学中文</span>
         <h1 className="stage-title"><span>Китайский</span><span>играючи<i>.</i></span></h1>
         <Companion3D ids={companions.map((c) => c.id)} className="stage-cast" accent="#a78bfa" />
-        <Link to={to} className="stage-cta">{onboarded ? 'К уроку' : 'Начать'} <span><ArrowRight size={22} /></span></Link>
+        <Link to={to} className="stage-cta">{onboarded ? 'К уроку' : 'Начать'}</Link>
       </main>
       <div className="stage-ticker" aria-hidden="true">
         <div className="marquee">

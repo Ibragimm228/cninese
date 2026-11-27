@@ -49,7 +49,6 @@ export function OptionCard({
       layout
       disabled={disabled}
       onClick={onClick}
-      whileHover={disabled ? undefined : { y: -2 }}
       className={clsx(
         'card3d relative flex items-center gap-3 px-4 py-3.5 text-left',
         selected && !state && '!border-sky !bg-sky-soft text-sky-dark',

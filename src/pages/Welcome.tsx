@@ -29,7 +29,7 @@ export default function Welcome() {
         <Logo />
         <div className="flex gap-1.5">
           {[0, 1, 2].map((i) => (
-            <span key={i} className={clsx('h-2 rounded-full transition-all duration-500', i <= step ? 'w-8 bg-red' : 'w-2 bg-paper-3')} />
+            <span key={i} className={clsx('h-2 rounded-full transition-[width,background-color] duration-150 ease-out', i <= step ? 'w-8 bg-red' : 'w-2 bg-paper-3')} />
           ))}
         </div>
       </header>
@@ -46,7 +46,7 @@ export default function Welcome() {
             {step === 0 && (
               <div>
                 <p className="font-brush text-8xl text-red">你好</p>
-                <p className="mt-1 text-ink-soft">nǐ hǎo — привет!</p>
+                <p className="mt-1 text-ink-soft">nǐ hǎo, привет</p>
                 <h1 className="mt-6 font-display text-4xl font-bold tracking-tight md:text-5xl">Как тебя зовут?</h1>
                 <input
                   autoFocus
@@ -79,7 +79,7 @@ export default function Welcome() {
                       onClick={() => setGoal(g.xp)}
                       className={clsx('card3d flex items-center gap-4 px-5 py-4 text-left', goal === g.xp && '!border-sky !bg-sky-soft')}
                     >
-                      <span className={clsx('grid size-12 place-items-center rounded-xl font-hanzi text-2xl font-black', goal === g.xp ? 'bg-sky text-white' : 'bg-paper-2')}>
+                      <span className={clsx('grid size-12 place-items-center rounded-xl font-hanzi text-2xl font-semibold', goal === g.xp ? 'bg-sky text-white' : 'bg-paper-2')}>
                         {g.hanzi}
                       </span>
                       <span className="flex-1">
@@ -101,7 +101,7 @@ export default function Welcome() {
                   开始
                 </motion.p>
                 <h1 className="mt-4 font-display text-4xl font-bold tracking-tight">Всё готово!</h1>
-                <p className="mx-auto mt-3 max-w-md text-lg text-ink-soft">3 минуты · включи звук</p>
+                <p className="mx-auto mt-3 max-w-md text-lg text-ink-soft">Включи звук</p>
                 <Button
                   variant="jade"
                   className="mt-8 w-full"

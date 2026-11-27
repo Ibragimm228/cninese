@@ -42,7 +42,7 @@ export function ThemeSwitcher() {
       {open && (
         <div className="theme-sheet" role="dialog" aria-modal="true" aria-label="Выбор дизайна">
           <header>
-            <span>Дизайн · {themes.length}</span>
+            <span>Дизайн</span>
             <button type="button" autoFocus onClick={() => setOpen(false)} aria-label="Закрыть">×</button>
           </header>
           <div className="theme-grid">

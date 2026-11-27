@@ -22,7 +22,6 @@ export function AppShell() {
         <div className="app-brand">
           <Logo className="xl:flex [&>span:last-child]:hidden xl:[&>span:last-child]:inline" to="/" />
         </div>
-        <p className="studio-label app-nav-label">01 / ПРОСТРАНСТВО</p>
         <nav className="app-nav" aria-label="Разделы">
           {NAV.map((n) => (
             <NavLink
@@ -44,16 +43,11 @@ export function AppShell() {
             </NavLink>
           ))}
         </nav>
-        <div className="app-sidebar-foot">
-          <span className="font-hanzi">学</span>
-          <p className="studio-label">Школа Mòlì<br />HSK 01</p>
-        </div>
       </aside>
 
       <div className="app-main">
         <header className="app-topbar">
           <Logo className="md:hidden" />
-          <p className="studio-label app-topbar-label"><span className="status-dot" /> MÒLÌ / ШКОЛА КИТАЙСКОГО</p>
           <StatChips />
         </header>
         <main key={pathname} className="app-scene pb-28 md:pb-10">
@@ -75,13 +69,10 @@ export function AppShell() {
   )
 }
 
-export function PageHeader({ kicker, title, children }: { kicker: string; title: React.ReactNode; children?: React.ReactNode }) {
+export function PageHeader({ title, children }: { title: React.ReactNode; children?: React.ReactNode }) {
   return (
     <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-      <div>
-        <p className="studio-label mb-2 text-red"><span className="status-dot" /> {kicker}</p>
-        <h1 className="page-title">{title}<span aria-hidden="true">.</span></h1>
-      </div>
+      <h1 className="page-title">{title}<span aria-hidden="true">.</span></h1>
       {children}
     </div>
   )

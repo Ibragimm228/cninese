@@ -30,11 +30,11 @@ export default function Profile() {
     { icon: <FlameIcon size={28} />, value: s.streak, label: 'дней подряд' },
     { icon: <BoltIcon size={28} />, value: s.xp, label: 'всего XP' },
     { icon: <TrophyIcon size={28} className="text-gold" />, value: `${done}/${lessons.length}`, label: 'уроков' },
-    { icon: <span className="font-hanzi text-2xl font-black text-red">字</span>, value: learnedWords(s).length, label: 'слов изучено' },
+    { icon: <span className="font-hanzi text-2xl font-semibold text-red">字</span>, value: learnedWords(s).length, label: 'слов изучено' },
   ]
   return (
     <div className="mx-auto max-w-[1000px] px-4 pt-6 md:px-8 md:pt-10">
-      <PageHeader kicker="我 · Профиль" title={s.name} />
+      <PageHeader title={s.name} />
       <CompanionPicker />
       <AccountCard />
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -101,7 +101,7 @@ export default function Profile() {
           <Toggle label="Показывать пиньинь" value={s.settings.showPinyin} onChange={(v) => s.setSettings({ showPinyin: v })} />
           <label className="mt-5 block text-sm font-semibold text-ink-soft">Скорость озвучки: {s.settings.speechRate.toFixed(2)}×</label>
           <input type="range" min={0.5} max={1.2} step={0.05} value={s.settings.speechRate} onChange={(e) => s.setSettings({ speechRate: Number(e.target.value) })} className="mt-2 w-full accent-red" />
-          {!hasChineseVoice() && <p className="mt-3 rounded-xl bg-gold/20 p-3 text-sm">В браузере не найден китайский голос — озвучка может не работать. Лучше всего — Chrome, Edge или Safari.</p>}
+          {!hasChineseVoice() && <p className="mt-3 rounded-xl bg-gold/20 p-3 text-sm">В браузере не найден китайский голос, озвучка может не работать. Лучше всего — Chrome, Edge или Safari.</p>}
         </div>
         <div className="flex flex-col gap-6">
           <div className="rounded-3xl border-2 border-paper-3 bg-card p-6">
