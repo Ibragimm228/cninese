@@ -75,6 +75,8 @@ export async function signIn(mode: 'login' | 'register', name: string, password:
 
 export async function signOut(): Promise<void> {
   clearTimeout(timer)
+  // save what has not been uploaded yet, because the local copy is cleared below
+  await push().catch(() => {})
   await call('/api/logout', { method: 'POST' }).catch(() => {})
   localStorage.removeItem(KEY)
   localStorage.removeItem(BASE)
