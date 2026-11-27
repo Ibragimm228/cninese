@@ -23,6 +23,31 @@ fn is_day(s: &str) -> bool {
     b.len() == 10 && b[4] == b'-' && b[7] == b'-' && b.iter().enumerate().all(|(i, c)| i == 4 || i == 7 || c.is_ascii_digit())
 }
 
+fn is_word_key(id: &str) -> bool {
+    id.strip_prefix("w-").is_some_and(|body| {
+        let mut parts = body.split('-');
+        let slug = |s: &str| !s.is_empty() && s.bytes().all(|b| b.is_ascii_lowercase() || b.is_ascii_digit());
+        parts.next().is_some_and(slug) && parts.next().is_none_or(slug) && parts.next().is_none() && body.len() <= 80
+    })
+}
+
+fn is_lesson_key(id: &str) -> bool {
+    let (prefix, unit_max) = match id.strip_prefix("hsk") {
+        Some(id) => match id.split_once('-') {
+            Some(("1", rest)) => (rest, 3),
+            Some(("2", rest)) => (rest, 10),
+            Some(("3", rest)) => (rest, 15),
+            _ => return false,
+        },
+        None => (id, 10),
+    };
+    let in_range = |s: &str, max| !s.is_empty() && s.bytes().all(|b| b.is_ascii_digit())
+        && !s.starts_with('0') && s.parse::<u8>().is_ok_and(|n| n <= max);
+    let Some((unit, lesson)) = prefix.strip_prefix('u').and_then(|s| s.split_once('-')) else { return false };
+    in_range(unit, unit_max) && (matches!(lesson, "review" | "test")
+        || lesson.strip_prefix('l').is_some_and(|n| in_range(n, 5)))
+}
+
 /// Checks a progress snapshot and reduces it to the figures the server itself relies on.
 /// `week` is the list of day keys (YYYY-MM-DD) that make up the current league week.
 pub fn check(state: &Value, week: &[String]) -> Result<Summary, String> {
@@ -59,6 +84,14 @@ pub fn check(state: &Value, week: &[String]) -> Result<Summary, String> {
         if !state.get(key).is_some_and(Value::is_object) {
             return Err(format!("{key}: expected an object"));
         }
+    }
+    let words = state["words"].as_object().unwrap();
+    let lessons = state["lessons"].as_object().unwrap();
+    if words.len() > 650 || words.iter().any(|(id, value)| !is_word_key(id) || !value.is_object()) {
+        return Err("words: invalid vocabulary progress".into());
+    }
+    if lessons.len() > 300 || lessons.iter().any(|(id, value)| !is_lesson_key(id) || !value.is_object()) {
+        return Err("lessons: invalid lesson progress".into());
     }
     Ok(Summary { xp, streak, week_xp })
 }
@@ -97,6 +130,19 @@ mod tests {
         let mut s = good();
         s["streak"] = json!(30);
         s["bestStreak"] = json!(30);
+        assert!(check(&s, &week()).is_err());
+    }
+
+    #[test]
+    fn accepts_expanded_levels_alongside_legacy_progress() {
+        let mut s = good();
+        s["words"] = json!({ "w-g0w": { "correct": 1 }, "w-123-sense": { "correct": 2 } });
+        s["lessons"] = json!({ "u1-l1": { "times": 2 }, "hsk1-u3-review": {}, "hsk2-u10-l4": {}, "hsk3-u15-test": {} });
+        assert!(check(&s, &week()).is_ok());
+        s["lessons"]["hsk4-u1-l1"] = json!({});
+        assert!(check(&s, &week()).is_err());
+        s["lessons"] = json!({});
+        s["words"]["w-123-sense"] = json!(2);
         assert!(check(&s, &week()).is_err());
     }
 }

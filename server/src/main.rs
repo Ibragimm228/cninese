@@ -1,5 +1,7 @@
-//! Mòlì sync server: accounts, validated progress snapshots and a real weekly league.
+//! Mòlì sync server: accounts, progress, exam history and a real weekly league.
 
+mod exam;
+mod login_limit;
 mod validate;
 
 use std::{
@@ -13,7 +15,7 @@ use argon2::{
     Argon2,
 };
 use axum::{
-    extract::{Query, State},
+    extract::{ConnectInfo, Query, State},
     http::{header, HeaderMap, Method, StatusCode},
     response::{IntoResponse, Response},
     routing::{get, post},
@@ -140,19 +142,34 @@ async fn register(State(db): State<Db>, Json(c): Json<Credentials>) -> Result<Js
     Ok(Json(Session { token, name }))
 }
 
-async fn login(State(db): State<Db>, Json(c): Json<Credentials>) -> Result<Json<Session>, ApiError> {
+async fn login(State(db): State<Db>, ConnectInfo(peer): ConnectInfo<SocketAddr>, Json(c): Json<Credentials>) -> Result<Json<Session>, ApiError> {
+    let name = c.name.trim();
+    if !(2..=24).contains(&name.chars().count()) {
+        return Err(ApiError(StatusCode::UNAUTHORIZED, "wrong name or password".into()));
+    }
+    let key = (peer.ip().to_string(), name.to_ascii_lowercase());
+    let now = now_ms();
     // the lock is released before the slow password check so it cannot stall other requests
-    let row: Option<(i64, String, String)> = db
-        .lock()
-        .unwrap()
-        .query_row("SELECT id, name, password FROM users WHERE name = ?1", [c.name.trim()], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
-        .optional()?;
-    let denied = || ApiError(StatusCode::UNAUTHORIZED, "wrong name or password".into());
-    let (id, name, hash) = row.ok_or_else(denied)?;
-    let parsed = PasswordHash::new(&hash).map_err(|_| denied())?;
-    Argon2::default().verify_password(c.password.as_bytes(), &parsed).map_err(|_| denied())?;
-    let token = open_session(&db.lock().unwrap(), id)?;
-    Ok(Json(Session { token, name }))
+    let row: Option<(i64, String, String)> = {
+        let db = db.lock().unwrap();
+        login_limit::reserve(&db, &key, now)?;
+        db.query_row("SELECT id, name, password FROM users WHERE name = ?1", [name], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?))).optional()?
+    };
+    if let Some((id, name, hash)) = row {
+        if !(6..=128).contains(&c.password.len()) {
+            return Err(ApiError(StatusCode::UNAUTHORIZED, "wrong name or password".into()));
+        }
+        let authenticated = tokio::task::spawn_blocking(move || {
+            PasswordHash::new(&hash).is_ok_and(|parsed| Argon2::default().verify_password(c.password.as_bytes(), &parsed).is_ok())
+        }).await.unwrap_or(false);
+        if authenticated {
+            let db = db.lock().unwrap();
+            login_limit::clear(&db, &key)?;
+            let token = open_session(&db, id)?;
+            return Ok(Json(Session { token, name }));
+        }
+    }
+    Err(ApiError(StatusCode::UNAUTHORIZED, "wrong name or password".into()))
 }
 
 async fn logout(State(db): State<Db>, headers: HeaderMap) -> Result<StatusCode, ApiError> {
@@ -237,6 +254,8 @@ async fn main() {
     let path = std::env::var("DATABASE_PATH").unwrap_or_else(|_| "moli.db".into());
     let conn = Connection::open(&path).expect("open database");
     migrate(&conn).expect("migrate database");
+    exam::migrate(&conn).expect("migrate exam history");
+    login_limit::migrate(&conn).expect("migrate login limits");
     let app = Router::new()
         .route("/api/health", get(|| async { "ok" }))
         .route("/api/register", post(register))
@@ -244,11 +263,12 @@ async fn main() {
         .route("/api/logout", post(logout))
         .route("/api/progress", get(get_progress).put(put_progress))
         .route("/api/league", get(league))
+        .route("/api/exam", get(exam::history).post(exam::record))
         .layer(RequestBodyLimitLayer::new(validate::MAX_SNAPSHOT_BYTES + 4096))
         .layer(CorsLayer::new().allow_origin(Any).allow_methods([Method::GET, Method::POST, Method::PUT]).allow_headers([header::AUTHORIZATION, header::CONTENT_TYPE]))
         .with_state(Arc::new(Mutex::new(conn)));
     let port: u16 = std::env::var("PORT").ok().and_then(|p| p.parse().ok()).unwrap_or(8787);
     let listener = tokio::net::TcpListener::bind(SocketAddr::from(([0, 0, 0, 0], port))).await.expect("bind port");
     println!("moli-server listening on :{port}, database {path}");
-    axum::serve(listener, app).with_graceful_shutdown(async { let _ = tokio::signal::ctrl_c().await; }).await.expect("serve");
+    axum::serve(listener, app.into_make_service_with_connect_info::<SocketAddr>()).with_graceful_shutdown(async { let _ = tokio::signal::ctrl_c().await; }).await.expect("serve");
 }
