@@ -127,7 +127,7 @@ function speakSentence(sentence: Sentence): Exercise {
     hanzi: sentence.tokens.join(''),
     pinyin: words.map((w) => w?.pinyin ?? '').filter(Boolean).join(' '),
     ru: sentence.ru,
-    wordIds: words.map((w) => w?.id).filter((x): x is string => !!x),
+    wordIds: [...new Set(words.map((w) => w?.id).filter((x): x is string => !!x))],
   }
 }
 
