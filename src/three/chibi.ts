@@ -153,7 +153,7 @@ export function createChibi(id: CompanionId, reducedMotion = false): Chibi {
     root: rig.root,
     wave: () => { if (reducedMotion) greet = !greet; else if (cheer <= 0) wave = WAVE },
     celebrate: () => { if (reducedMotion) greet = true; else { cheer = CHEER; wave = 0 } },
-    look: (x, y) => target.set(x, y),
+    look: (x, y) => target.set(x, -y),
     update,
   }
 }
