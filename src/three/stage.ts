@@ -293,7 +293,7 @@ export function portrait(id: CompanionId, size = 420, tier = 0) {
         canvas.width = canvas.height = size
         Object.assign(canvas.style, { position: 'fixed', left: '-9999px', width: `${size}px`, height: `${size}px` })
         document.body.append(canvas)
-        const stage = new ChibiStage(canvas, [id], { interactive: false, reducedMotion: true, preserve: true, zoom: 1.12, tier })
+        const stage = new ChibiStage(canvas, [id], { interactive: false, reducedMotion: true, preserve: true, zoom: 1.12, tier, detail: size > 512 ? 1 : 0.35 })
         const url = stage.snapshot()
         stage.dispose()
         canvas.remove()
