@@ -4,7 +4,7 @@ import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { Button } from '../components/Button'
-import { CompanionCelebration } from '../components/Companion'
+import { CompanionCelebration, LessonBuddy, type LessonBuddyHandle } from '../components/Companion'
 import { ExerciseView, type ExResult } from '../components/exercises'
 import { BoltIcon, CheckIcon, CloseIcon, FlameIcon, GemIcon, HeartIcon } from '../components/icons'
 import { achievements } from '../data/achievements'
@@ -83,6 +83,7 @@ function LessonPlayer({
   const [confirmExit, setConfirmExit] = useState(false)
   const [praise, setPraise] = useState(PRAISE[0])
   const start = useRef(Date.now())
+  const buddy = useRef<LessonBuddyHandle>(null)
   const [elapsed, setElapsed] = useState(0)
 
   const ex = queue[idx]
@@ -126,6 +127,7 @@ function LessonPlayer({
     setChecked(pending_)
     setAnswered((a) => a + 1)
     const ids = exerciseWordIds(ex)
+    buddy.current?.react(pending_.ok)
     if (pending_.ok) {
       sfx.correct()
       setCorrect((c) => c + 1)
@@ -261,6 +263,8 @@ function LessonPlayer({
         </AnimatePresence>
       </main>
 
+      <LessonBuddy ref={buddy} />
+
       <footer
         className={clsx(
           'fixed inset-x-0 bottom-0 z-20 border-t-2 transition-colors duration-200',
@@ -367,6 +371,8 @@ function solutionOf(ex: Exercise): string {
       return ex.direction === 'zh-ru' ? ex.sentence.ru : `${ex.sentence.tokens.join('')} — ${ex.sentence.ru}`
     case 'fill':
       return ex.sentence.tokens.join('')
+    case 'speak':
+      return `${ex.hanzi} (${ex.pinyin})`
     default:
       return ''
   }

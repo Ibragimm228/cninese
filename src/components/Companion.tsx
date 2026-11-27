@@ -1,7 +1,8 @@
-import { useEffect, useRef, useState, type CSSProperties } from 'react'
+import { useEffect, useImperativeHandle, useRef, useState, type CSSProperties, type Ref } from 'react'
 import { createPortal } from 'react-dom'
 import { Link } from 'react-router-dom'
 import { companionFor, companions, type Companion } from '../data/companions'
+import { addDays, dayKey } from '../lib/date'
 import { learnedWords } from '../lib/progress'
 import { useApp, type CompletionOutcome } from '../lib/store'
 import { auraTier, Companion3D, CompanionPortrait, type Companion3DHandle } from './Companion3D'
@@ -14,13 +15,16 @@ function palette(companion: Companion): CSSProperties {
 export function CompanionCard() {
   const companion = useApp((s) => companionFor(s.companionId))
   const streak = useApp((s) => s.streak)
+  // a companion left alone for a whole day dozes off until the next lesson
+  const sleepy = useApp((s) => !!s.lastActiveDay && s.lastActiveDay < addDays(dayKey(), -1))
   const stage = useRef<Companion3DHandle>(null)
 
   return (
     <section className="pet-card" style={palette(companion)} aria-label={`Спутник серии: ${companion.name}`}>
       <div className="pet-stage">
         <span className="pet-glyph" aria-hidden="true">{companion.glyph}</span>
-        <Companion3D ref={stage} ids={[companion.id]} tier={auraTier(streak)} accent={companion.color} className="pet-canvas" />
+        <Companion3D ref={stage} ids={[companion.id]} tier={auraTier(streak)} accent={companion.color} sleepy={sleepy} className="pet-canvas" />
+        {sleepy && <span className="pet-zzz" aria-label="Спит">Zzz</span>}
         <span className="pet-counter"><strong>{streak}</strong> дн.</span>
         <Link className="editorial-icon pet-swap" to="/profile#companions" aria-label="Выбрать спутника"><ArrowUpRight size={17} /></Link>
       </div>
@@ -56,6 +60,37 @@ export function CompanionPicker() {
         ))}
       </div>
     </section>
+  )
+}
+
+export type LessonBuddyHandle = { react: (ok: boolean) => void }
+
+const CHEERS = [['对！', 'верно'], ['很好！', 'очень хорошо'], ['太棒了！', 'отлично'], ['厉害！', 'круто']]
+const COMFORTS = [['加油！', 'держись'], ['没关系', 'ничего страшного'], ['再来！', 'ещё раз']]
+
+/** The companion watches the lesson from the corner and reacts to every answer. */
+export function LessonBuddy({ ref }: { ref?: Ref<LessonBuddyHandle> }) {
+  const companion = useApp((s) => companionFor(s.companionId))
+  const stage = useRef<Companion3DHandle>(null)
+  const [line, setLine] = useState<{ zh: string; ru: string; ok: boolean; n: number } | null>(null)
+  useImperativeHandle(ref, () => ({
+    react: (ok) => {
+      stage.current?.react(ok ? 'happy' : 'sad')
+      const pool = ok ? CHEERS : COMFORTS
+      const [zh, ru] = pool[Math.floor(Math.random() * pool.length)]
+      setLine((prev) => ({ zh, ru, ok, n: (prev?.n ?? 0) + 1 }))
+    },
+  }))
+  useEffect(() => {
+    if (!line) return
+    const t = setTimeout(() => setLine(null), 2200)
+    return () => clearTimeout(t)
+  }, [line])
+  return (
+    <aside className="lesson-buddy" style={palette(companion)} aria-hidden="true">
+      {line && <p key={line.n} className="lesson-buddy-line" data-ok={line.ok}><strong>{line.zh}</strong><span>{line.ru}</span></p>}
+      <Companion3D ref={stage} ids={[companion.id]} accent={companion.color} interactive={false} lite zoom={1.15} className="lesson-buddy-canvas" />
+    </aside>
   )
 }
 

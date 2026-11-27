@@ -4,6 +4,7 @@ import { ChoiceEx, FillEx, ListenEx, ToneEx } from './Choice'
 import type { ExResult } from './common'
 import { IntroEx } from './Intro'
 import { MatchEx } from './Match'
+import { SpeakEx } from './Speak'
 import { WriteEx } from './Write'
 
 export type { ExResult }
@@ -32,6 +33,8 @@ export function ExerciseView({
       return <BuildEx ex={ex} locked={locked} onChange={onChange} />
     case 'match':
       return <MatchEx ex={ex} locked={locked} onChange={onChange} />
+    case 'speak':
+      return <SpeakEx ex={ex} locked={locked} onChange={onChange} />
     case 'write':
       return <WriteEx ex={ex} locked={locked} onChange={onChange} />
   }

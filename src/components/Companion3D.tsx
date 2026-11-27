@@ -4,7 +4,7 @@ import { companionFor, type CompanionId } from '../data/companions'
 import type { ChibiStage, StageOptions } from '../three/stage'
 import { CompanionArt } from './CompanionArt'
 
-export type Companion3DHandle = { wave: () => void; celebrate: () => void }
+export type Companion3DHandle = { wave: () => void; celebrate: () => void; react: (mood: 'happy' | 'sad') => void }
 
 const loadStage = () => import('../three/stage')
 
@@ -22,13 +22,16 @@ export function Companion3D({
   zoom,
   interactive = true,
   celebrateOnMount,
+  sleepy = false,
+  lite,
   ref,
 }: {
   ids: readonly CompanionId[]
   className?: string
   celebrateOnMount?: boolean
+  sleepy?: boolean
   ref?: Ref<Companion3DHandle>
-} & Pick<StageOptions, 'tier' | 'accent' | 'pedestal' | 'zoom' | 'interactive'>) {
+} & Pick<StageOptions, 'tier' | 'accent' | 'pedestal' | 'zoom' | 'interactive' | 'lite'>) {
   const canvas = useRef<HTMLCanvasElement>(null)
   const stage = useRef<ChibiStage | null>(null)
   const reducedMotion = useReducedMotion() ?? false
@@ -38,6 +41,7 @@ export function Companion3D({
   useImperativeHandle(ref, () => ({
     wave: () => stage.current?.wave(),
     celebrate: () => stage.current?.celebrate(),
+    react: (mood) => stage.current?.react(mood),
   }))
 
   useEffect(() => {
@@ -45,7 +49,8 @@ export function Companion3D({
     loadStage()
       .then(({ ChibiStage }) => {
         if (cancelled || !canvas.current) return
-        stage.current = new ChibiStage(canvas.current, key.split(',') as CompanionId[], { tier, accent, pedestal, zoom, interactive, reducedMotion })
+        stage.current = new ChibiStage(canvas.current, key.split(',') as CompanionId[], { tier, accent, pedestal, zoom, interactive, reducedMotion, lite })
+        stage.current.sleep(sleepy)
         const made = stage.current
         made.ready.then(
           () => { if (!cancelled && celebrateOnMount) made.celebrate() },
@@ -63,6 +68,7 @@ export function Companion3D({
   }, [key, reducedMotion])
 
   useEffect(() => stage.current?.setTier(tier), [tier])
+  useEffect(() => stage.current?.sleep(sleepy), [sleepy])
 
   if (failed) {
     return (

@@ -11,6 +11,9 @@ export type Chibi = {
   wave: () => void
   celebrate: () => void
   look: (x: number, y: number) => void
+  /** a quick pleased nod, or a short slump after a mistake */
+  react: (mood: 'happy' | 'sad') => void
+  sleep: (on: boolean) => void
 }
 
 type V3 = [number, number, number]
@@ -144,6 +147,8 @@ function stylise(root: THREE.Object3D) {
 const ease = (x: number) => x * x * (3 - 2 * x)
 const WAVE = 1.9
 const CHEER = 2.6
+const NOD = 1.3
+const SLUMP = 1.9
 
 export async function createChibi(id: CompanionId, reducedMotion = false, lite = false): Promise<Chibi> {
   const gltf = await (lite ? load(id, true).catch(() => load(id, false)) : load(id, false))
@@ -171,6 +176,10 @@ export async function createChibi(id: CompanionId, reducedMotion = false, lite =
   const phase = { chrollo: 0, kuroko: 1.3, ichigo: 2.6, anya: 3.9 }[id]
   let wave = 0
   let cheer = 0
+  let nod = 0
+  let slump = 0
+  let asleep = false
+  let doze = 0
   // with reduced motion a gesture is a held pose, not an animation
   let greet = false
   let nextBlink = 1.5 + phase
@@ -182,24 +191,32 @@ export async function createChibi(id: CompanionId, reducedMotion = false, lite =
   let headYaw = 0
   const target = new THREE.Vector2()
   const gaze = new THREE.Vector2()
+  const ahead = new THREE.Vector2()
 
   const update = (t: number, dt: number, turn = 0) => {
     const time = reducedMotion ? 0 : t + phase
     wave = Math.max(0, wave - dt)
     cheer = Math.max(0, cheer - dt)
+    nod = Math.max(0, nod - dt)
+    slump = Math.max(0, slump - dt)
+    const nodPos = nod > 0 ? 1 - nod / NOD : 0
+    const nodK = nod > 0 ? ease(Math.min(1, nodPos * 6)) * ease(Math.min(1, (1 - nodPos) * 3)) : 0
+    const slumpPos = slump > 0 ? 1 - slump / SLUMP : 0
+    const slumpK = slump > 0 ? ease(Math.min(1, slumpPos * 5)) * ease(Math.min(1, (1 - slumpPos) * 3)) : 0
     const wavePos = wave > 0 ? 1 - wave / WAVE : 0
     const cheerPos = cheer > 0 ? 1 - cheer / CHEER : 0
     const waveK = greet ? 1 : wave > 0 ? ease(Math.min(1, wavePos * 5)) * ease(Math.min(1, (1 - wavePos) * 4)) : 0
     const cheerK = cheer > 0 ? ease(Math.min(1, cheerPos * 6)) * ease(Math.min(1, (1 - cheerPos) * 4)) : 0
 
     // breathing and a gentle weight shift
-    const breath = Math.sin(time * 1.7)
+    doze += ((asleep && wave <= 0 && cheer <= 0 ? 1 : 0) - doze) * (reducedMotion ? 1 : Math.min(1, dt * 3))
+    const breath = Math.sin(time * (1.7 - doze * 0.8)) * (1 + doze * 1.2)
     bones.chest?.scale.set(1 + breath * 0.008, 1 + breath * 0.006, 1 + breath * 0.014)
-    rot('spine', Math.sin(time * 0.6) * 0.012 - cheerK * 0.08, 0, Math.sin(time * 0.85) * 0.014)
+    rot('spine', Math.sin(time * 0.6) * 0.012 - cheerK * 0.08 + slumpK * 0.12 + doze * 0.05, 0, Math.sin(time * 0.85) * 0.014)
     rot('hips', 0, 0, -Math.sin(time * 0.85) * 0.01)
 
     // jumps: three bounces for a celebration, a little hop for a greeting
-    const bounce = cheer > 0 ? Math.abs(Math.sin(cheerPos * Math.PI * 3)) * 0.42 * cheerK : wave > 0 ? Math.sin(Math.min(1, wavePos * 3.2) * Math.PI) * 0.14 : 0
+    const bounce = cheer > 0 ? Math.abs(Math.sin(cheerPos * Math.PI * 3)) * 0.42 * cheerK : wave > 0 ? Math.sin(Math.min(1, wavePos * 3.2) * Math.PI) * 0.14 : nod > 0 ? Math.sin(Math.min(1, nodPos * 2.6) * Math.PI) * 0.1 : 0
     const crouch = cheer > 0 ? Math.max(0, 0.08 - bounce) * cheerK : 0
     root.position.y = bounce
     root.scale.set(1 + crouch * 0.4, 1 - crouch, 1 + crouch * 0.4)
@@ -212,7 +229,7 @@ export async function createChibi(id: CompanionId, reducedMotion = false, lite =
     }
 
     // head: follow the pointer, tilt now and then
-    gaze.lerp(target, Math.min(1, dt * 6))
+    gaze.lerp(doze > 0.5 ? ahead : target, Math.min(1, dt * 6))
     nextFidget -= dt
     if (nextFidget <= 0 && !reducedMotion) {
       tiltTarget = tiltTarget === 0 ? (Math.random() < 0.5 ? -1 : 1) * (0.06 + Math.random() * 0.07) : 0
@@ -224,7 +241,7 @@ export async function createChibi(id: CompanionId, reducedMotion = false, lite =
     headYaw = yaw
     const waveSide = spec.waveArm === 'L' ? 1 : -1
     rot('neck', -gaze.y * 0.08, yaw * 0.35, 0)
-    rot('head', -gaze.y * 0.16 + Math.sin(time * 1.1) * 0.015 - cheerK * 0.12, yaw * 0.65, tilt + Math.sin(time * 0.8) * 0.015 - waveK * 0.09 * waveSide)
+    rot('head', -gaze.y * 0.16 + Math.sin(time * 1.1) * 0.015 - cheerK * 0.12 + slumpK * 0.36 + doze * (0.24 + Math.sin(time * 0.9) * 0.03) + nodK * Math.sin(nodPos * Math.PI * 4) * 0.16, yaw * 0.65, tilt * (1 - doze) + doze * 0.2 + Math.sin(time * 0.8) * 0.015 - waveK * 0.09 * waveSide)
     if (bones.eyes) {
       const rest = bones.eyes.userData.rest as THREE.Vector3
       bones.eyes.position.set(rest.x + gaze.x * 0.012, rest.y + gaze.y * 0.008, rest.z)
@@ -234,16 +251,16 @@ export async function createChibi(id: CompanionId, reducedMotion = false, lite =
     nextBlink -= dt
     if (nextBlink <= 0) { blink = 0.13; nextBlink = 2.2 + Math.random() * 3.4 }
     blink = Math.max(0, blink - dt)
-    const happy = cheerK > 0.35 || (greet && reducedMotion)
-    const closed = !happy && blink > 0 && !reducedMotion
+    const happy = cheerK > 0.35 || nodK > 0.3 || (greet && reducedMotion)
+    const closed = !happy && ((blink > 0 && !reducedMotion) || slumpK > 0.3 || doze > 0.5)
     show('eyes_open', !happy && !closed)
     show('iris', !happy && !closed)
     show('eyes_closed', closed)
     show('eyes_happy', happy)
-    const open = happy || waveK > 0.35
+    const open = cheerK > 0.35 || waveK > 0.35 || (greet && reducedMotion)
     show('mouth_open', open)
     show('mouth_rest', !open)
-    if (bones.brows) bones.brows.position.y = bones.brows.userData.y + Math.max(cheerK, waveK * 0.7) * 0.018
+    if (bones.brows) bones.brows.position.y = bones.brows.userData.y + Math.max(cheerK, waveK * 0.7, nodK * 0.8) * 0.018 - slumpK * 0.014
 
     // arms
     for (const side of ['L', 'R'] as const) {
@@ -288,6 +305,8 @@ export async function createChibi(id: CompanionId, reducedMotion = false, lite =
     wave: () => { if (reducedMotion) greet = !greet; else if (cheer <= 0) wave = WAVE },
     celebrate: () => { if (reducedMotion) greet = true; else { cheer = CHEER; wave = 0 } },
     look: (x, y) => target.set(x, -y),
+    react: (mood) => { if (reducedMotion || cheer > 0) return; if (mood === 'happy') { nod = NOD; slump = 0 } else { slump = SLUMP; nod = 0 } },
+    sleep: (on) => { asleep = on },
     update,
   }
 }

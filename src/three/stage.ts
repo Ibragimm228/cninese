@@ -38,6 +38,7 @@ export class ChibiStage {
   private canvas: HTMLCanvasElement
   private options: StageOptions
   private generation = 0
+  private asleep = false
   /** settles once the cast has loaded and been drawn */
   ready: Promise<void> = Promise.resolve()
 
@@ -120,6 +121,7 @@ export class ChibiStage {
         holder.position.set(offset * gap, 0, -Math.abs(offset) * 0.5)
         holder.rotation.y = -offset * 0.18
         holder.add(chibi.root)
+        chibi.sleep(this.asleep)
         this.turntable.add(holder)
         return { ...chibi, root: holder }
       })
@@ -180,6 +182,9 @@ export class ChibiStage {
 
   wave() { this.chibis.forEach((c) => c.wave()); this.start() }
   celebrate() { this.chibis.forEach((c) => c.celebrate()); this.start() }
+  react(mood: 'happy' | 'sad') { this.chibis.forEach((c) => c.react(mood)); this.start() }
+  /** dozing companions stay asleep through later cast changes */
+  sleep(on: boolean) { this.asleep = on; this.chibis.forEach((c) => c.sleep(on)); this.start() }
 
   snapshot() {
     this.render()

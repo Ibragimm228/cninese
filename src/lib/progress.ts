@@ -39,6 +39,26 @@ export function dueWords(s: Pick<AppState, 'words'>): Word[] {
     .filter((w): w is Word => !!w)
 }
 
+const DAY_MS = 24 * 60 * 60 * 1000
+
+/** How many words come up for review now, tomorrow and over the following week. */
+export function reviewForecast(s: Pick<AppState, 'words'>) {
+  const now = Date.now()
+  const all = Object.values(s.words)
+  return {
+    now: all.filter((p) => p.due <= now).length,
+    tomorrow: all.filter((p) => p.due > now && p.due <= now + DAY_MS).length,
+    week: all.filter((p) => p.due > now + DAY_MS && p.due <= now + 7 * DAY_MS).length,
+  }
+}
+
+export function dueLabel(due: number): string {
+  const days = Math.ceil((due - Date.now()) / DAY_MS)
+  if (due <= Date.now()) return 'сейчас'
+  if (days <= 1) return 'завтра'
+  return `через ${days} дн.`
+}
+
 export function weakWords(s: Pick<AppState, 'words'>): Word[] {
   return Object.entries(s.words)
     .filter(([, p]) => p.wrong > 0)
