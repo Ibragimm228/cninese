@@ -3,8 +3,11 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../components/Button'
+import { Companion3D } from '../components/Companion3D'
 import { Logo } from '../components/Logo'
 import { useApp } from '../lib/store'
+
+const GUIDES = ['kuroko', 'anya', 'ichigo'] as const
 
 const GOALS = [
   { xp: 10, label: 'Легко', time: '5 мин в день', hanzi: '慢' },
@@ -21,7 +24,7 @@ export default function Welcome() {
   const [goal, setGoal] = useState(30)
 
   return (
-    <div className="flex min-h-dvh flex-col bg-paper">
+    <div className="flex min-h-dvh flex-col focus-screen bg-paper">
       <header className="flex items-center justify-between px-5 py-5 md:px-10">
         <Logo />
         <div className="flex gap-1.5">
@@ -30,7 +33,8 @@ export default function Welcome() {
           ))}
         </div>
       </header>
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-5 pb-10">
+      <main className="welcome-main mx-auto grid w-full max-w-5xl flex-1 items-center gap-x-10 px-5 pb-10 md:grid-cols-[1fr_minmax(0,22rem)]">
+        <Companion3D key={step} ids={[GUIDES[step]]} className="welcome-guide h-44 w-full md:order-2 md:h-[26rem]" zoom={1.1} />
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
@@ -68,7 +72,6 @@ export default function Welcome() {
             {step === 1 && (
               <div>
                 <h1 className="font-display text-4xl font-bold tracking-tight md:text-5xl">Выбери цель дня</h1>
-                <p className="mt-3 text-lg text-ink-soft">Её можно поменять в любой момент в профиле.</p>
                 <div className="mt-8 grid gap-3">
                   {GOALS.map((g) => (
                     <button
@@ -98,9 +101,7 @@ export default function Welcome() {
                   开始
                 </motion.p>
                 <h1 className="mt-4 font-display text-4xl font-bold tracking-tight">Всё готово!</h1>
-                <p className="mx-auto mt-3 max-w-md text-lg text-ink-soft">
-                  Первый урок займёт 3 минуты. Ты выучишь свои первые китайские слова — включи звук 🔊
-                </p>
+                <p className="mx-auto mt-3 max-w-md text-lg text-ink-soft">3 минуты · включи звук</p>
                 <Button
                   variant="jade"
                   className="mt-8 w-full"

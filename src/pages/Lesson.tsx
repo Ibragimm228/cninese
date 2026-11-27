@@ -190,7 +190,7 @@ function LessonPlayer({
   const isIntro = ex.type === 'intro'
 
   return (
-    <div className="flex min-h-dvh flex-col bg-paper">
+    <div className="flex min-h-dvh flex-col focus-screen bg-paper">
       <header className="mx-auto flex w-full max-w-5xl items-center gap-4 px-4 pb-2 pt-5 md:px-8 md:pt-8">
         <button
           onClick={() => setConfirmExit(true)}
@@ -423,7 +423,7 @@ function Results({
   const ss = String(seconds % 60).padStart(2, '0')
   const acc = Math.round(accuracy * 100)
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-between bg-paper px-6 py-10">
+    <div className="flex min-h-dvh flex-col items-center justify-between focus-screen bg-paper px-6 py-10">
       <AnimatePresence mode="wait">
         {phase === 'results' && (
           <motion.div key="r" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -20 }} className="flex w-full max-w-xl flex-1 flex-col items-center justify-center text-center">

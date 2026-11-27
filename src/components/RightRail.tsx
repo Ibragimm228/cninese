@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { achievements } from '../data/achievements'
 import { lastNDays, weekdayShort } from '../lib/date'
 import { useApp, todayXp } from '../lib/store'
-import { BoltIcon, FlameIcon, GemIcon, SnowIcon } from './icons'
+import { BoltIcon, FlameIcon, SnowIcon } from './icons'
 
 export function RightRail() {
   const s = useApp()
@@ -22,7 +22,7 @@ export function RightRail() {
         <div className="flex items-center gap-4">
           <div className="relative size-16">
             <svg viewBox="0 0 64 64" className="size-16 -rotate-90">
-              <circle cx="32" cy="32" r="27" stroke="#ebe4d6" strokeWidth="8" fill="none" />
+              <circle cx="32" cy="32" r="27" stroke="var(--color-paper-3)" strokeWidth="8" fill="none" />
               <circle
                 cx="32"
                 cy="32"
@@ -43,7 +43,7 @@ export function RightRail() {
               {xpToday}
               <span className="text-base text-ink-soft"> / {s.dailyGoal} XP</span>
             </p>
-            <p className="text-sm text-ink-soft">{pct >= 1 ? 'Цель выполнена! 加油!' : 'Ещё немного — и цель выполнена'}</p>
+            <p className="text-sm text-ink-soft">{pct >= 1 ? '完成 · Готово' : `Осталось ${Math.max(0, s.dailyGoal - xpToday)} XP`}</p>
           </div>
         </div>
       </section>
@@ -79,7 +79,7 @@ export function RightRail() {
         <div className="flex items-start justify-between">
           <div>
             <p className="font-display text-xs uppercase tracking-[0.2em] text-gold">Лига Нефрита</p>
-            <h3 className="mt-1 font-display text-lg font-bold">Соревнуйся каждую неделю</h3>
+            
           </div>
           <span className="font-brush text-5xl leading-none text-red">赛</span>
         </div>
@@ -108,9 +108,6 @@ export function RightRail() {
         </div>
       </section>
 
-      <div className="flex items-center gap-2 px-2 text-xs text-ink-soft">
-        <GemIcon size={14} /> Кристаллы дают за уроки и цели — трать их на сердца и заморозки серии.
-      </div>
     </aside>
   )
 }

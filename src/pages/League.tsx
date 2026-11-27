@@ -39,11 +39,11 @@ export default function League() {
         <PageHeader kicker="联赛 · Неделя" title="Лига Нефрита">
           <span className="rounded-full bg-paper-2 px-4 py-2 font-display text-sm font-semibold">Осталось {daysLeft} дн.</span>
         </PageHeader>
-        <div className="mb-6 flex items-center gap-4 overflow-hidden rounded-3xl bg-jade p-5 text-white" style={{ boxShadow: '0 6px 0 #17784f' }}>
+        <div className="mode-card mb-6 flex items-center gap-4 overflow-hidden rounded-3xl p-5 text-white" style={{ '--m': '#22a06b', '--m-shadow': '#17784f' } as React.CSSProperties}>
           <span className="font-brush text-6xl">玉</span>
-          <p className="text-white/90">Топ-5 переходят в Лигу Золота. Зарабатывай XP в уроках и практике, чтобы подняться выше!</p>
+          <p className="mode-desc font-display text-lg font-bold text-white">Топ-5 → Лига Золота</p>
         </div>
-        <ol className="overflow-hidden rounded-3xl border-2 border-paper-3 bg-card">
+        <ol className="league-list overflow-hidden rounded-3xl border-2 border-paper-3 bg-card">
           {rows.map((r, i) => (
             <motion.li
               key={r.name}

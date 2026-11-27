@@ -26,9 +26,6 @@ export default function Tones() {
   return (
     <div className="mx-auto max-w-[1100px] px-4 pt-6 md:px-8 md:pt-10">
       <PageHeader kicker="声调 · Фонетика" title="Тоны" />
-      <p className="-mt-4 mb-10 max-w-2xl text-lg text-ink-soft">
-        Тон — это мелодия слога. Один и тот же слог с разным тоном — совершенно разные слова. Послушай и повтори вслух.
-      </p>
 
       <div className="mb-6 flex flex-wrap gap-2">
         {SYLLABLES.map((x, i) => (

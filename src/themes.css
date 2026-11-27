@@ -239,3 +239,43 @@ html[data-theme="manga"] .stage-cta span { border: 3px solid #2b1055; background
 html[data-theme="manga"] .stage-ticker { border-top: 3px solid #2b1055; background: #ffe14d; font-family: var(--font-display); letter-spacing: .06em; }
 
 html[data-theme="void"] .writer-pad { background: #f3f0ff; }
+
+/* ══════════ shared inner-screen pieces ══════════ */
+.mode-card { background: var(--m); box-shadow: 0 6px 0 var(--m-shadow); }
+.page-title { animation: title-in .9s var(--ease-out-expo) backwards; }
+@keyframes title-in { from { opacity: 0; translate: 0 .35em; clip-path: inset(0 0 100% 0); } to { clip-path: inset(-20% -5% -20% -5%); } }
+@media (prefers-reduced-motion: reduce) { .page-title { animation: none; } }
+
+html[data-theme="void"] .mode-card { border: 1px solid color-mix(in srgb, var(--m) 55%, transparent); background: radial-gradient(120% 140% at 100% 100%, color-mix(in srgb, var(--m) 55%, transparent), transparent 62%), linear-gradient(160deg, #ffffff14, #ffffff05); box-shadow: inset 0 1px 0 #ffffff1f; backdrop-filter: blur(18px); transition: transform .5s var(--ease-out-expo), box-shadow .3s; }
+html[data-theme="void"] .mode-card:hover:not(:disabled) { transform: translateY(-4px); box-shadow: inset 0 1px 0 #ffffff26, 0 0 50px -10px var(--m); }
+html[data-theme="void"] .mode-card h3 { font-weight: 300; }
+html[data-theme="void"] .mode-hanzi { color: var(--m); opacity: .55; text-shadow: 0 0 40px var(--m); }
+html[data-theme="void"] .mode-go { border: 1px solid #ffffff40; background: transparent; }
+html[data-theme="void"] :is(.row-card, .league-list) { border: 1px solid #ffffff1f; background: #ffffff0a; backdrop-filter: blur(14px); }
+html[data-theme="void"] .exam-hero { border: 1px solid #a78bfa55; background: radial-gradient(110% 120% at 100% 0, #6d3bff88, transparent 60%), #ffffff0a; color: #fff; box-shadow: 0 0 80px -30px #a78bfa; }
+html[data-theme="void"] .exam-hero :is(ul, li) { color: #ffffffb3; }
+
+html[data-theme="poster"] .mode-card { border: 3px solid #000; border-radius: 0; background: #fff; color: #000; box-shadow: 7px 7px 0 var(--m); transition: transform .15s, box-shadow .15s, background .15s; }
+html[data-theme="poster"] .mode-card:hover:not(:disabled) { background: var(--m); color: #fff; transform: translate(-3px, -3px); box-shadow: 10px 10px 0 #000; }
+html[data-theme="poster"] .mode-card h3 { font-size: clamp(1.7rem, 3.4vw, 2.8rem); line-height: .95; text-transform: uppercase; }
+html[data-theme="poster"] .mode-card.sm\:col-span-2 { background: #e6ff00; }
+html[data-theme="poster"] .mode-card.sm\:col-span-2:hover:not(:disabled) { background: #000; color: #e6ff00; }
+html[data-theme="poster"] .mode-desc { color: inherit; opacity: .7; }
+html[data-theme="poster"] .mode-hanzi { color: var(--m); opacity: 1; font-family: var(--font-hanzi); font-weight: 900; }
+html[data-theme="poster"] .mode-card:hover .mode-hanzi { color: #ffffff55; }
+html[data-theme="poster"] .mode-go { border-radius: 0; background: #000; color: #fff; }
+html[data-theme="poster"] :is(.row-card, .league-list) { border: 3px solid #000; border-radius: 0; background: #fff; }
+html[data-theme="poster"] .exam-hero { border-radius: 0; background: #000; color: #fff; box-shadow: 8px 8px 0 #2f4bff; }
+
+html[data-theme="manga"] .mode-card { border: 3px solid #2b1055; border-radius: 1.8rem; background: radial-gradient(#ffffff40 20%, transparent 21%) 0 0 / 13px 13px, var(--m); box-shadow: 0 7px 0 #2b1055; transition: transform .35s cubic-bezier(.3, 1.8, .5, 1), box-shadow .2s; }
+html[data-theme="manga"] .mode-card:hover:not(:disabled) { transform: translateY(-6px) rotate(-1deg); box-shadow: 0 13px 0 #2b1055; }
+html[data-theme="manga"] .mode-card:nth-child(even):hover:not(:disabled) { rotate: 1.5deg; }
+html[data-theme="manga"] .mode-card h3 { -webkit-text-stroke: 1.5px #2b1055; paint-order: stroke fill; text-shadow: 0 3px 0 #2b1055; }
+html[data-theme="manga"] .mode-desc { font-weight: 700; color: #fff; }
+html[data-theme="manga"] .mode-hanzi { color: #ffe14d; opacity: 1; text-shadow: 4px 4px 0 #2b1055; }
+html[data-theme="manga"] .mode-go { border: 2.5px solid #2b1055; background: #ffe14d; color: #2b1055; }
+html[data-theme="manga"] :is(.row-card, .league-list) { border: 3px solid #2b1055; background: #fff; box-shadow: 0 5px 0 #2b1055; }
+html[data-theme="manga"] .exam-hero { border: 3px solid #2b1055; background: radial-gradient(#ffffff26 20%, transparent 21%) 0 0 / 14px 14px, linear-gradient(140deg, #7b3dff, #ff3d8b); box-shadow: 0 8px 0 #2b1055; }
+html:is([data-theme="void"], [data-theme="manga"]) .focus-screen { background: transparent; }
+html[data-theme="poster"] .focus-screen { background: linear-gradient(#0000000d 1px, transparent 1px) 0 0 / 100% 2.5rem, #fff; }
+.focus-screen { animation: scene-in .5s var(--ease-out-expo) backwards; }
