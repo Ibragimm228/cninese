@@ -79,6 +79,7 @@ export function MatchEx({ ex, onChange }: ExProps<Extract<Exercise, { type: 'mat
               w.id,
               <span className="flex flex-col">
                 <span className="font-hanzi text-2xl font-semibold">{w.hanzi}</span>
+                {w.sense && <span className="text-xs text-ink-soft">{w.pinyin} · {w.sense}</span>}
                 {showPinyin && <span className="text-xs text-ink-soft">{w.pinyin}</span>}
               </span>,
             ),

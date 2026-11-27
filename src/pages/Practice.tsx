@@ -2,11 +2,14 @@ import { motion } from 'framer-motion'
 import { useNavigate } from 'react-router-dom'
 import { PageHeader } from '../components/AppShell'
 import { RightRail } from '../components/RightRail'
+import { HeadphonesIcon, MicIcon, PenIcon, RefreshIcon, SpeechIcon, TargetIcon } from '../components/icons'
 import { dueLabel, dueWords, learnedWords, reviewForecast, weakWords } from '../lib/progress'
 import { canRecognize } from '../lib/recognition'
 import { hasChineseVoice } from '../lib/speech'
 import { strength } from '../lib/srs'
 import { useApp } from '../lib/store'
+
+const modeIcons = [RefreshIcon, TargetIcon, HeadphonesIcon, MicIcon, PenIcon, SpeechIcon]
 
 export default function Practice() {
   const s = useApp()
@@ -30,7 +33,9 @@ export default function Practice() {
       <div className="min-w-0 flex-1">
         <PageHeader title="Практика" />
         <div className="grid gap-4 sm:grid-cols-2">
-          {modes.map((m, i) => (
+          {modes.map((m, i) => {
+            const Icon = modeIcons[i]
+            return (
             <motion.button
               key={m.id}
               initial={{ opacity: 0, y: 20 }}
@@ -44,10 +49,12 @@ export default function Practice() {
               <span className="mode-hanzi absolute -bottom-6 -right-2 font-brush text-[130px] leading-none text-white/20">
                 {m.hanzi}
               </span>
+              <Icon size={24} className="relative mb-3" />
               <h3 className={`relative font-display font-bold ${m.big ? 'text-3xl' : 'text-xl'}`}>{m.title}</h3>
               <p className="mode-desc relative mt-1 text-white/85">{m.desc}</p>
             </motion.button>
-          ))}
+            )
+          })}
         </div>
 
         <div className="mt-4 grid grid-cols-3 gap-3" aria-label="Расписание повторений">

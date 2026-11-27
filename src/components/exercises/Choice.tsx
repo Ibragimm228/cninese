@@ -41,8 +41,9 @@ export function ChoiceEx({ ex, locked, onChange }: ExProps<Extract<Exercise, { t
         <div className="mb-8 flex items-center gap-5">
           <SpeakButton text={w.hanzi} size="lg" />
           <div>
-            {showPinyin && <Pinyin text={w.pinyin} className="block text-lg" />}
-            <span className="font-hanzi text-5xl font-semibold md:text-6xl">{w.hanzi}</span>
+            {(showPinyin || w.sense) && <Pinyin text={w.pinyin} className="block text-lg" />}
+            <span className={`break-all font-hanzi font-semibold ${w.hanzi.length > 3 ? 'text-3xl' : 'text-5xl md:text-6xl'}`}>{w.hanzi}</span>
+            {w.sense && <span className="block text-sm text-ink-soft">{w.sense}</span>}
           </div>
         </div>
         <div className="grid gap-3 sm:grid-cols-2">
@@ -55,7 +56,6 @@ export function ChoiceEx({ ex, locked, onChange }: ExProps<Extract<Exercise, { t
               onClick={() => pick(i)}
               state={locked ? (o.id === w.id ? 'correct' : sel === i ? 'wrong' : null) : null}
             >
-              <span className="text-2xl">{o.emoji}</span>
               <span className="text-lg font-semibold">{o.ru}</span>
             </OptionCard>
           ))}
@@ -81,8 +81,7 @@ export function ChoiceEx({ ex, locked, onChange }: ExProps<Extract<Exercise, { t
             state={locked ? (o.id === w.id ? 'correct' : sel === i ? 'wrong' : null) : null}
             className="flex-col !items-center justify-center gap-1 py-6 text-center md:py-8"
           >
-            <span className="text-4xl md:text-5xl">{o.emoji}</span>
-            <span className="mt-2 font-hanzi text-3xl font-semibold md:text-4xl">{o.hanzi}</span>
+            <span className="mt-2 max-w-full break-all font-hanzi text-3xl font-semibold md:text-4xl">{o.hanzi}</span>
             {showPinyin && <span className="text-sm text-ink-soft">{o.pinyin}</span>}
           </OptionCard>
         ))}

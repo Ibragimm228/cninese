@@ -1,9 +1,11 @@
+export type HskLevel = 1 | 2 | 3
+
 export type Word = {
   id: string
   hanzi: string
   pinyin: string
   ru: string
-  emoji: string
+  sense?: string
   note?: string
 }
 
@@ -16,6 +18,7 @@ export type Sentence = {
 export type Unit = {
   id: string
   index: number
+  level: HskLevel
   title: string
   subtitle: string
   hanzi: string

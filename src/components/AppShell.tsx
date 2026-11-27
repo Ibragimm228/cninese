@@ -2,6 +2,7 @@ import { Suspense } from 'react'
 import clsx from 'clsx'
 import { NavLink, Outlet, useLocation } from 'react-router-dom'
 import { Logo } from './Logo'
+import { ArrowUpRight } from './icons'
 import { StatChips } from './StatChips'
 
 export const NAV = [
@@ -37,7 +38,7 @@ export function AppShell() {
                     {n.hanzi}
                   </span>
                   <span className="app-nav-text">{n.label}</span>
-                  {isActive && <span className="app-nav-active" aria-hidden="true">↗</span>}
+                  {isActive && <span className="app-nav-active" aria-hidden="true"><ArrowUpRight size={16} /></span>}
                 </>
               )}
             </NavLink>

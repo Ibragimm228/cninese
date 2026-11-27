@@ -1,4 +1,5 @@
 import { addDays, dayKey } from './date'
+import type { HskLevel } from '../data/types'
 import { useApp } from './store'
 
 const API = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '')
@@ -95,6 +96,10 @@ export async function signOut(): Promise<void> {
 
 export function leagueTable(): Promise<LeagueRow[]> {
   return call<LeagueRow[]>(`/api/league?week=${weekKeys()[0]}`)
+}
+
+export function submitExamResult(level: HskLevel, score: number): Promise<unknown> {
+  return call('/api/exam', { method: 'POST', body: JSON.stringify({ level, score }) })
 }
 
 /** Uploads progress a moment after it changes, and catches up with the server on start. */

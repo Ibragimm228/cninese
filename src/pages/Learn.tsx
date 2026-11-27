@@ -3,10 +3,10 @@ import { useState } from 'react'
 import { Link, Navigate } from 'react-router-dom'
 import { Button } from '../components/Button'
 import { CompanionCard } from '../components/Companion'
-import { BookIcon, CheckIcon, LockIcon, StarIcon, TrophyIcon } from '../components/icons'
+import { BookIcon, CheckIcon, StarIcon, TrophyIcon } from '../components/icons'
 import { RightRail } from '../components/RightRail'
-import { lessons, lessonsOfUnit, units, wordById } from '../data/curriculum'
-import type { Lesson, Unit } from '../data/types'
+import { hskLevels, lessons, lessonsOfUnit, units, wordById } from '../data/curriculum'
+import type { HskLevel, Lesson, Unit } from '../data/types'
 import { currentLessonIndex, lessonStatus, unitProgress, type LessonStatus } from '../lib/progress'
 import { useApp } from '../lib/store'
 
@@ -14,8 +14,12 @@ export default function Learn() {
   const s = useApp()
   const [tipUnit, setTipUnit] = useState<Unit | null>(null)
   const [openLesson, setOpenLesson] = useState<string | null>(null)
+  const [selectedLevel, setSelectedLevel] = useState<HskLevel | null>(null)
   const next = lessons[currentLessonIndex(s)]
-  const completed = Object.keys(s.lessons).length
+  const level = selectedLevel ?? units.find((unit) => unit.id === next?.unitId)?.level ?? 3
+  const levelUnits = units.filter((unit) => unit.level === level)
+  const levelLessons = levelUnits.flatMap((unit) => lessonsOfUnit(unit.id))
+  const completed = levelLessons.filter((lesson) => s.lessons[lesson.id]).length
   if (!s.onboarded) return <Navigate to="/welcome" replace />
 
   return (
@@ -28,7 +32,7 @@ export default function Learn() {
         <div className="learn-hero-grid" aria-hidden="true" />
         <span className="learn-hero-hanzi" aria-hidden="true">学</span>
         <div className="learn-hero-copy">
-          <h2>{next ? next.title : 'HSK 1 пройден!'}</h2>
+          <h2>{next ? next.title : 'Курс HSK 1–3 пройден!'}</h2>
           <Link className="editorial-cta" to={next ? `/lesson/${next.id}` : '/practice'}>
             {next ? 'К уроку' : 'Практика'}
           </Link>
@@ -38,11 +42,20 @@ export default function Learn() {
 
       <div className="learn-pet"><CompanionCard /></div>
       <div className="learn-track">
-        <div className="track-heading">
-          <h2>HSK 1</h2>
-          <span>{completed} / {lessons.length} уроков</span>
+        <div className="mb-5 flex flex-wrap gap-2" role="group" aria-label="Уровень HSK">
+          {hskLevels.map((value) => (
+            <button key={value} type="button" aria-pressed={value === level}
+              onClick={() => setSelectedLevel(value)}
+              className={`rounded-full border border-paper-3 px-4 py-2 text-sm font-bold ${value === level ? 'bg-ink text-paper' : 'bg-card text-ink-soft'}`}>
+              HSK {value}
+            </button>
+          ))}
         </div>
-        {units.map((unit) => (
+        <div className="track-heading">
+          <h2>HSK {level}</h2>
+          <span>{completed} / {levelLessons.length} уроков</span>
+        </div>
+        {levelUnits.map((unit) => (
           <UnitSection
             key={unit.id}
             unit={unit}
@@ -100,7 +113,7 @@ function UnitSection({
 
 function LessonRow({ lesson, index, status, open, onToggle }: { lesson: Lesson; index: number; status: LessonStatus; open: boolean; onToggle: () => void }) {
   const rec = useApp((s) => s.lessons[lesson.id])
-  const Icon = status === 'locked' ? LockIcon : status === 'done' ? CheckIcon : lesson.kind === 'test' ? TrophyIcon : lesson.kind === 'review' ? BookIcon : StarIcon
+  const Icon = status === 'done' ? CheckIcon : lesson.kind === 'test' ? TrophyIcon : lesson.kind === 'review' ? BookIcon : StarIcon
   const description = status === 'locked' ? 'Пройди предыдущие уроки, чтобы открыть этот.'
     : lesson.kind === 'learn' ? `Новые слова: ${lesson.newWordIds.map((id) => wordById.get(id)!.hanzi).join(' · ')}`
     : lesson.kind === 'review' ? 'Закрепи все слова и фразы юнита.' : 'Финальная проверка юнита. Без подсказок!'

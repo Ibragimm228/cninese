@@ -62,7 +62,7 @@ export default function League() {
               transition={{ delay: i * 0.03 }}
               className={clsx('flex items-center gap-4 border-b-2 border-paper-2 px-5 py-3.5 last:border-0', r.me && 'bg-sky-soft', i === 5 && 'border-b-jade')}
             >
-              <span className={clsx('w-7 text-center font-display font-bold', i < 3 ? 'text-xl' : 'text-ink-soft')}>{i < 3 ? ['🥇', '🥈', '🥉'][i] : i + 1}</span>
+              <span className={clsx('w-7 text-center font-display font-bold', i < 3 ? 'text-gold' : 'text-ink-soft')}>{i + 1}</span>
               <span className={clsx('grid size-10 place-items-center rounded-full font-display font-bold text-white')} style={{ background: r.me ? '#3d7bf7' : ['#e63b2e', '#22a06b', '#8b5cf6', '#f2b33d', '#ec4899', '#0ea5a4'][i % 6] }}>
                 {r.name[0]}
               </span>

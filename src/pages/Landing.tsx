@@ -165,7 +165,7 @@ function MarqueeBand() {
 }
 
 const MANIFESTO =
-  'Duolingo учит китайскому как испанскому. Здесь тон видно глазами, иероглиф раскрывается историей, а в конце курса ждёт пробный HSK 1.'
+  'Duolingo учит китайскому как испанскому. Здесь тон видно глазами, иероглиф раскрывается историей, а каждый уровень завершается пробным HSK.'
 
 function Manifesto() {
   const ref = useRef<HTMLDivElement>(null)
@@ -280,18 +280,17 @@ function FeatureDemo({ kind }: { kind: string }) {
           <div className="h-3 flex-1 rounded-full bg-paper-3">
             <div className="h-full w-2/3 rounded-full bg-jade" />
           </div>
-          <HeartIcon size={20} /> <span className="font-bold text-wrong">4</span>
+          <HeartIcon size={20} className="text-wrong" /> <span className="font-bold text-wrong">4</span>
         </div>
         <p className="mt-5 font-display text-lg font-bold">Как сказать «чай»?</p>
         <div className="mt-4 grid grid-cols-2 gap-2.5">
           {[
-            ['🍵', '茶', true],
-            ['💧', '水', false],
-            ['☕', '咖啡', false],
-            ['🍎', '苹果', false],
-          ].map(([e, h, ok]) => (
+            ['茶', true],
+            ['水', false],
+            ['咖啡', false],
+            ['苹果', false],
+          ].map(([h, ok]) => (
             <div key={h as string} className={clsx('card3d flex flex-col items-center py-3', ok && '!border-jade !bg-jade-soft')}>
-              <span className="text-2xl">{e}</span>
               <span className="font-hanzi text-xl font-semibold">{h}</span>
             </div>
           ))}
@@ -493,7 +492,7 @@ function StrokeDemo() {
 
 function Numbers() {
   const stats = [
-    { n: allWords.length, label: 'слов и выражений HSK 1' },
+    { n: allWords.length, label: 'слов и выражений курса' },
     { n: units.length, label: 'тематических юнитов' },
     { n: allSentences.length, label: 'фраз для практики' },
     { n: 8, label: 'типов заданий' },
@@ -616,7 +615,7 @@ const COMPARE: { f: string; d: string; m: string }[] = [
   { f: 'Иероглифы', d: 'узнать по картинке', m: 'разбор на ключи + история для запоминания' },
   { f: 'Письмо', d: 'тап по готовым чертам', m: 'пишешь сам, с проверкой порядка черт' },
   { f: 'Объяснения', d: 'переведены с английского', m: 'написаны для русскоязычных' },
-  { f: 'Цель', d: 'абстрактные «уровни»', m: 'пробный HSK 1 и прогноз готовности' },
+  { f: 'Цель', d: 'абстрактные «уровни»', m: 'пробные HSK 1–3 и охват лексики' },
   { f: 'Сердца', d: 'за деньги', m: 'бесплатно, за кристаллы', },
   { f: 'Реклама', d: 'есть', m: 'нет и не будет' },
 ]

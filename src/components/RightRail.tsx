@@ -2,7 +2,7 @@ import { Link } from 'react-router-dom'
 import { achievements } from '../data/achievements'
 import { lastNDays, weekdayShort } from '../lib/date'
 import { useApp, todayXp } from '../lib/store'
-import { BoltIcon, FlameIcon, SnowIcon } from './icons'
+import { AchievementIcon, BoltIcon, FlameIcon, SnowIcon } from './icons'
 
 export function RightRail() {
   const s = useApp()
@@ -67,7 +67,7 @@ export function RightRail() {
                 <span
                   className={`grid size-8 place-items-center rounded-full ${active ? 'bg-[#ff9f1c] text-white' : 'bg-paper-2 text-paper-3'}`}
                 >
-                  {active ? <FlameIcon size={18} className="brightness-[3] saturate-0" /> : '·'}
+                  {active ? <FlameIcon size={18} /> : '·'}
                 </span>
               </div>
             )
@@ -97,9 +97,9 @@ export function RightRail() {
             <span
               key={a.id}
               title={`${a.title} — ${a.desc}`}
-              className={`grid size-11 place-items-center rounded-xl text-xl ${s.achievements[a.id] ? 'bg-gold/25' : 'bg-paper-2 grayscale opacity-40'}`}
+              className={`grid size-11 place-items-center rounded-xl text-xl ${s.achievements[a.id] ? 'bg-gold/25 text-ink' : 'bg-paper-2 text-ink-soft opacity-65'}`}
             >
-              {a.icon}
+              <AchievementIcon symbol={a.icon} size={21} />
             </span>
           ))}
         </div>

@@ -16,11 +16,11 @@ export function StatChips({ className }: { className?: string }) {
   return (
     <div className={clsx('flex items-center gap-1 md:gap-2', className)}>
       <Chip title={`Серия: ${streak} дн.`} className={activeToday ? 'text-[#f08a00]' : 'text-ink-soft'}>
-        <FlameIcon size={24} className={clsx(!activeToday && 'grayscale opacity-60')} />
+        <FlameIcon size={24} className={clsx(!activeToday && 'opacity-65')} />
         {streak}
       </Chip>
       <Chip title={`Кристаллы: ${gems}`} className="text-sky">
-        <GemIcon size={22} />
+        <GemIcon size={24} />
         {gems}
       </Chip>
       <Chip title={`Сердца: ${hearts}`} className="text-wrong">

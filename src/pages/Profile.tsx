@@ -6,7 +6,7 @@ import { PageHeader } from '../components/AppShell'
 import { Button } from '../components/Button'
 import { AccountCard } from '../components/Account'
 import { CompanionPicker } from '../components/Companion'
-import { BoltIcon, FlameIcon, GemIcon, SnowIcon, TrophyIcon } from '../components/icons'
+import { AchievementIcon, BoltIcon, FlameIcon, GemIcon, HeartIcon, SnowIcon, TrophyIcon } from '../components/icons'
 import { achievements } from '../data/achievements'
 import { lessons } from '../data/curriculum'
 import { lastNDays, weekdayShort } from '../lib/date'
@@ -71,8 +71,8 @@ export default function Profile() {
           {achievements.map((a) => {
             const got = !!s.achievements[a.id]
             return (
-              <div key={a.id} className={clsx('rounded-3xl border-2 p-4 text-center', got ? 'border-gold border-b-[5px] bg-card' : 'border-paper-3 bg-paper-2 opacity-60')}>
-                <div className={clsx('text-4xl', !got && 'grayscale')}>{a.icon}</div>
+              <div key={a.id} className={clsx('rounded-3xl border-2 p-4 text-center', got ? 'border-gold bg-card' : 'border-paper-3 bg-paper-2 opacity-65')}>
+                <div className={clsx('mx-auto grid size-11 place-items-center rounded-xl', got ? 'bg-gold/25 text-ink' : 'bg-card text-ink-soft')}><AchievementIcon symbol={a.icon} size={24} /></div>
                 <p className="mt-2 font-display text-sm font-bold">{a.title}</p>
                 <p className="text-xs text-ink-soft">{a.desc}</p>
               </div>
@@ -115,7 +115,7 @@ export default function Profile() {
               <Button variant="sky" className="px-4 py-2.5" disabled={s.gems < 200 || s.freezes >= 2} onClick={() => s.buyFreeze()}>200</Button>
             </div>
             <div className="mt-4 flex items-center gap-3">
-              <span className="text-3xl">❤️</span>
+              <HeartIcon size={36} className="shrink-0 text-wrong" />
               <div className="flex-1">
                 <p className="font-semibold">Полные сердца</p>
                 <p className="text-sm text-ink-soft">Сейчас: {s.hearts}/5</p>

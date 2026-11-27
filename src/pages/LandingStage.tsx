@@ -2,9 +2,10 @@ import { Link } from 'react-router-dom'
 import { Companion3D } from '../components/Companion3D'
 import { Logo } from '../components/Logo'
 import { companions } from '../data/companions'
+import { wordsByLevel } from '../data/curriculum'
 import { useApp } from '../lib/store'
 
-const ticker = ['150 слов', '学', '4 тона', '中', 'HSK 1', '文', '5 минут в день', '好']
+const ticker = [`${Object.values(wordsByLevel).flat().length} слов`, '学', '4 тона', '中', 'HSK 1–3', '文', '5 минут в день', '好']
 
 /** One-screen landing used by the alternative designs: a stage, a headline, one action. */
 export default function LandingStage() {

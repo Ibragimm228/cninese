@@ -6,7 +6,7 @@ import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { Button } from '../components/Button'
 import { CompanionCelebration, LessonBuddy, type LessonBuddyHandle } from '../components/Companion'
 import { ExerciseView, type ExResult } from '../components/exercises'
-import { BoltIcon, CheckIcon, CloseIcon, FlameIcon, GemIcon, HeartIcon } from '../components/icons'
+import { AchievementIcon, BoltIcon, CheckIcon, ClockIcon, CloseIcon, FlameIcon, GemIcon, HeartIcon } from '../components/icons'
 import { achievements } from '../data/achievements'
 import { lessonById, units } from '../data/curriculum'
 import { exerciseWordIds, generateLesson, generatePractice, type Exercise, type PracticeMode } from '../lib/exercises'
@@ -456,7 +456,7 @@ function Results({
               {[
                 { label: 'Опыт', value: `+${xp}`, color: '#f2b33d', icon: <BoltIcon size={20} /> },
                 { label: 'Точность', value: `${acc}%`, color: '#22a06b', icon: <CheckIcon size={20} className="text-white" /> },
-                { label: 'Время', value: `${mm}:${ss}`, color: '#3d7bf7', icon: <span className="text-white">⏱</span> },
+                { label: 'Время', value: `${mm}:${ss}`, color: '#3d7bf7', icon: <ClockIcon size={20} className="text-white" /> },
               ].map((s, i) => (
                 <motion.div
                   key={s.label}
@@ -482,7 +482,7 @@ function Results({
         {phase === 'streak' && (
           <motion.div key="s" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="flex flex-1 flex-col items-center justify-center text-center">
             <motion.div animate={{ scale: [1, 1.1, 1], rotate: [0, -4, 4, 0] }} transition={{ repeat: Infinity, duration: 1.8 }}>
-              <FlameIcon size={160} />
+              <FlameIcon size={132} className="text-gold" />
             </motion.div>
             <motion.p initial={{ scale: 2, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', damping: 10 }} className="font-display text-8xl font-black text-[#f08a00]">
               {streak}
@@ -505,7 +505,7 @@ function Results({
                     transition={{ delay: i * 0.2, duration: 0.8 }}
                     className="w-48 rounded-3xl border-2 border-gold border-b-[6px] bg-card p-6"
                   >
-                    <div className="text-6xl">{a.icon}</div>
+                    <AchievementIcon symbol={a.icon} size={39} className="mx-auto text-ink" />
                     <p className="mt-3 font-display text-lg font-bold">{a.title}</p>
                     <p className="text-sm text-ink-soft">{a.desc}</p>
                   </motion.div>

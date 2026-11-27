@@ -6,7 +6,7 @@ import { addDays, dayKey } from '../lib/date'
 import { learnedWords } from '../lib/progress'
 import { useApp, type CompletionOutcome } from '../lib/store'
 import { auraTier, Companion3D, CompanionPortrait, type Companion3DHandle } from './Companion3D'
-import { ArrowUpRight } from './icons'
+import { ArrowUpRight, SparkIcon } from './icons'
 
 function palette(companion: Companion): CSSProperties {
   return { '--pet-color': companion.color, '--pet-ink': companion.ink } as CSSProperties
@@ -139,7 +139,7 @@ function ShareCard({ companion }: { companion: Companion }) {
 
   return (
     <>
-      <button type="button" className="pet-share" onClick={make} disabled={busy} aria-label="Создать карточку серии" title="Карточка серии">{busy ? '…' : failed ? 'Не вышло' : '✦ Карточка'}</button>
+      <button type="button" className="pet-share" onClick={make} disabled={busy} aria-label="Создать карточку серии" title="Карточка серии">{busy ? '…' : failed ? 'Не вышло' : <><SparkIcon size={14} className="inline-block align-text-bottom" /> Карточка</>}</button>
       {url && createPortal(
         <div className="share-sheet" role="dialog" aria-modal="true" aria-label="Карточка серии" onClick={() => setUrl(null)}>
           <img src={url} alt={`Карточка серии: ${companion.name}`} onClick={(e) => e.stopPropagation()} />
