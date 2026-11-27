@@ -1,20 +1,28 @@
 import clsx from 'clsx'
 import { motion } from 'framer-motion'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { PageHeader } from '../components/AppShell'
 import { Button } from '../components/Button'
-import { BoltIcon, FlameIcon, GemIcon, SnowIcon, TrophyIcon } from '../components/icons'
+import { AccountCard } from '../components/Account'
+import { CompanionPicker } from '../components/Companion'
+import { AchievementIcon, BoltIcon, FlameIcon, GemIcon, HeartIcon, SnowIcon, TrophyIcon } from '../components/icons'
 import { achievements } from '../data/achievements'
 import { lessons } from '../data/curriculum'
 import { lastNDays, weekdayShort } from '../lib/date'
 import { learnedWords } from '../lib/progress'
 import { hasChineseVoice } from '../lib/speech'
 import { useApp } from '../lib/store'
+import { session, signOut } from '../lib/sync'
 
 export default function Profile() {
   const s = useApp()
   const [name, setName] = useState(s.name)
   const [confirmReset, setConfirmReset] = useState(false)
+  const { hash } = useLocation()
+  useEffect(() => {
+    if (hash === '#companions') document.getElementById('companions')?.scrollIntoView()
+  }, [hash])
   const days = lastNDays(7)
   const max = Math.max(s.dailyGoal, ...days.map((d) => s.xpByDay[d] ?? 0))
   const done = Object.keys(s.lessons).length
@@ -22,14 +30,16 @@ export default function Profile() {
     { icon: <FlameIcon size={28} />, value: s.streak, label: 'дней подряд' },
     { icon: <BoltIcon size={28} />, value: s.xp, label: 'всего XP' },
     { icon: <TrophyIcon size={28} className="text-gold" />, value: `${done}/${lessons.length}`, label: 'уроков' },
-    { icon: <span className="font-hanzi text-2xl font-black text-red">字</span>, value: learnedWords(s).length, label: 'слов изучено' },
+    { icon: <span className="font-hanzi text-2xl font-semibold text-red">字</span>, value: learnedWords(s).length, label: 'слов изучено' },
   ]
   return (
     <div className="mx-auto max-w-[1000px] px-4 pt-6 md:px-8 md:pt-10">
-      <PageHeader kicker="我 · Профиль" title={s.name} />
+      <PageHeader title={s.name} />
+      <CompanionPicker />
+      <AccountCard />
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         {stats.map((x, i) => (
-          <motion.div key={x.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }} className="flex items-center gap-3 rounded-3xl border-2 border-paper-3 bg-[#fffdf8] p-4">
+          <motion.div key={x.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.06 }} className="flex items-center gap-3 rounded-3xl border-2 border-paper-3 bg-card p-4">
             {x.icon}
             <div>
               <p className="font-display text-xl font-bold">{x.value}</p>
@@ -39,7 +49,7 @@ export default function Profile() {
         ))}
       </div>
 
-      <section className="mt-8 rounded-3xl border-2 border-paper-3 bg-[#fffdf8] p-6">
+      <section className="mt-8 rounded-3xl border-2 border-paper-3 bg-card p-6">
         <h2 className="font-display text-lg font-bold">Опыт за неделю</h2>
         <div className="mt-6 flex h-48 items-end gap-3">
           {days.map((d, i) => {
@@ -61,8 +71,8 @@ export default function Profile() {
           {achievements.map((a) => {
             const got = !!s.achievements[a.id]
             return (
-              <div key={a.id} className={clsx('rounded-3xl border-2 p-4 text-center', got ? 'border-gold border-b-[5px] bg-[#fffdf8]' : 'border-paper-3 bg-paper-2 opacity-60')}>
-                <div className={clsx('text-4xl', !got && 'grayscale')}>{a.icon}</div>
+              <div key={a.id} className={clsx('rounded-3xl border-2 p-4 text-center', got ? 'border-gold bg-card' : 'border-paper-3 bg-paper-2 opacity-65')}>
+                <div className={clsx('mx-auto grid size-11 place-items-center rounded-xl', got ? 'bg-gold/25 text-ink' : 'bg-card text-ink-soft')}><AchievementIcon symbol={a.icon} size={24} /></div>
                 <p className="mt-2 font-display text-sm font-bold">{a.title}</p>
                 <p className="text-xs text-ink-soft">{a.desc}</p>
               </div>
@@ -71,18 +81,18 @@ export default function Profile() {
         </div>
       </section>
 
-      <section className="mt-8 grid gap-6 md:grid-cols-2">
-        <div className="rounded-3xl border-2 border-paper-3 bg-[#fffdf8] p-6">
+      <section className="mt-8 grid grid-cols-1 gap-6 md:grid-cols-2">
+        <div className="rounded-3xl border-2 border-paper-3 bg-card p-6">
           <h2 className="font-display text-lg font-bold">Настройки</h2>
           <label className="mt-5 block text-sm font-semibold text-ink-soft">Имя</label>
           <div className="mt-1 flex gap-2">
-            <input value={name} onChange={(e) => setName(e.target.value)} maxLength={24} className="flex-1 rounded-xl border-2 border-paper-3 px-4 py-2.5 outline-none focus:border-sky" />
+            <input value={name} onChange={(e) => setName(e.target.value)} maxLength={24} className="min-w-0 flex-1 rounded-xl border-2 border-paper-3 px-4 py-2.5 outline-none focus:border-sky" />
             <Button variant="ink" className="px-4 py-2.5" onClick={() => s.setName(name)}>OK</Button>
           </div>
           <label className="mt-5 block text-sm font-semibold text-ink-soft">Цель дня</label>
           <div className="mt-1 grid grid-cols-4 gap-2">
             {[10, 30, 50, 80].map((g) => (
-              <button key={g} onClick={() => s.setDailyGoal(g)} className={clsx('rounded-xl border-2 py-2 font-display text-sm font-bold', s.dailyGoal === g ? 'border-sky bg-[#e8f0ff] text-sky-dark' : 'border-paper-3')}>
+              <button key={g} onClick={() => s.setDailyGoal(g)} className={clsx('rounded-xl border-2 py-2 font-display text-sm font-bold', s.dailyGoal === g ? 'border-sky bg-sky-soft text-sky-dark' : 'border-paper-3')}>
                 {g} XP
               </button>
             ))}
@@ -91,10 +101,10 @@ export default function Profile() {
           <Toggle label="Показывать пиньинь" value={s.settings.showPinyin} onChange={(v) => s.setSettings({ showPinyin: v })} />
           <label className="mt-5 block text-sm font-semibold text-ink-soft">Скорость озвучки: {s.settings.speechRate.toFixed(2)}×</label>
           <input type="range" min={0.5} max={1.2} step={0.05} value={s.settings.speechRate} onChange={(e) => s.setSettings({ speechRate: Number(e.target.value) })} className="mt-2 w-full accent-red" />
-          {!hasChineseVoice() && <p className="mt-3 rounded-xl bg-gold/20 p-3 text-sm">В браузере не найден китайский голос — озвучка может не работать. Лучше всего — Chrome, Edge или Safari.</p>}
+          {!hasChineseVoice() && <p className="mt-3 rounded-xl bg-gold/20 p-3 text-sm">В браузере не найден китайский голос, озвучка может не работать. Лучше всего — Chrome, Edge или Safari.</p>}
         </div>
         <div className="flex flex-col gap-6">
-          <div className="rounded-3xl border-2 border-paper-3 bg-[#fffdf8] p-6">
+          <div className="rounded-3xl border-2 border-paper-3 bg-card p-6">
             <h2 className="flex items-center gap-2 font-display text-lg font-bold">Магазин <GemIcon size={20} /> <span className="text-sky">{s.gems}</span></h2>
             <div className="mt-4 flex items-center gap-3">
               <SnowIcon size={36} />
@@ -105,7 +115,7 @@ export default function Profile() {
               <Button variant="sky" className="px-4 py-2.5" disabled={s.gems < 200 || s.freezes >= 2} onClick={() => s.buyFreeze()}>200</Button>
             </div>
             <div className="mt-4 flex items-center gap-3">
-              <span className="text-3xl">❤️</span>
+              <HeartIcon size={36} className="shrink-0 text-wrong" />
               <div className="flex-1">
                 <p className="font-semibold">Полные сердца</p>
                 <p className="text-sm text-ink-soft">Сейчас: {s.hearts}/5</p>
@@ -115,10 +125,10 @@ export default function Profile() {
           </div>
           <div className="rounded-3xl border-2 border-wrong/30 p-6">
             <h2 className="font-display text-lg font-bold">Сбросить прогресс</h2>
-            <p className="mt-1 text-sm text-ink-soft">Удалит весь прогресс, XP и достижения в этом браузере.</p>
+            <p className="mt-1 text-sm text-ink-soft">Удалит весь прогресс, XP и достижения в этом браузере.{session() && ' Вы выйдете из аккаунта, сохранённая в нём копия останется.'}</p>
             {confirmReset ? (
               <div className="mt-4 flex gap-2">
-                <Button variant="wrong" onClick={() => { s.reset(); setConfirmReset(false) }}>Да, сбросить</Button>
+                <Button variant="wrong" onClick={() => { if (session()) void signOut(); else s.reset(); setConfirmReset(false) }}>Да, сбросить</Button>
                 <Button variant="ghost" onClick={() => setConfirmReset(false)}>Отмена</Button>
               </div>
             ) : (
@@ -136,7 +146,7 @@ function Toggle({ label, value, onChange }: { label: string; value: boolean; onC
     <button onClick={() => onChange(!value)} className="mt-5 flex w-full items-center justify-between" role="switch" aria-checked={value}>
       <span className="font-semibold">{label}</span>
       <span className={clsx('relative h-7 w-12 rounded-full transition-colors', value ? 'bg-jade' : 'bg-paper-3')}>
-        <motion.span layout className="absolute top-1 size-5 rounded-full bg-white shadow" style={{ left: value ? 24 : 4 }} />
+        <motion.span layout className="absolute top-1 size-5 rounded-full bg-card shadow" style={{ left: value ? 24 : 4 }} />
       </span>
     </button>
   )

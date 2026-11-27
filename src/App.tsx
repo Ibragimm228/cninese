@@ -1,9 +1,13 @@
-import { lazy, Suspense } from 'react'
-import { BrowserRouter, Navigate, Route, Routes } from 'react-router-dom'
+import { lazy, Suspense, useLayoutEffect } from 'react'
+import { MotionConfig } from 'framer-motion'
+import { BrowserRouter, Navigate, Route, Routes, useLocation, useNavigationType } from 'react-router-dom'
 import { AppShell } from './components/AppShell'
 import Learn from './pages/Learn'
+import { useApp } from './lib/store'
+import { ThemeSwitcher } from './components/ThemeSwitcher'
 
 const Landing = lazy(() => import('./pages/Landing'))
+const LandingStage = lazy(() => import('./pages/LandingStage'))
 const Welcome = lazy(() => import('./pages/Welcome'))
 const Practice = lazy(() => import('./pages/Practice'))
 const Characters = lazy(() => import('./pages/Characters'))
@@ -22,12 +26,19 @@ function Loader() {
   )
 }
 
-export default function App() {
+function AppRoutes() {
+  const { pathname, hash } = useLocation()
+  const navigationType = useNavigationType()
+  const classic = useApp((s) => !s.theme || s.theme === 'moli')
+
+  useLayoutEffect(() => {
+    if (navigationType !== 'POP' && !hash) window.scrollTo(0, 0)
+  }, [pathname, hash, navigationType])
+
   return (
-    <BrowserRouter>
-      <Suspense fallback={<Loader />}>
+    <Suspense fallback={<Loader />}>
       <Routes>
-        <Route path="/" element={<Landing />} />
+        <Route path="/" element={classic ? <Landing /> : <LandingStage />} />
         <Route path="/welcome" element={<Welcome />} />
         <Route path="/lesson/:id" element={<LessonRoute />} />
         <Route path="/practice/:mode" element={<PracticeRoute />} />
@@ -37,12 +48,22 @@ export default function App() {
           <Route path="/characters" element={<Characters />} />
           <Route path="/tones" element={<Tones />} />
           <Route path="/exam" element={<Exam />} />
-              <Route path="/league" element={<League />} />
+          <Route path="/league" element={<League />} />
           <Route path="/profile" element={<Profile />} />
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      </Suspense>
-    </BrowserRouter>
+    </Suspense>
+  )
+}
+
+export default function App() {
+  return (
+    <MotionConfig reducedMotion="user">
+      <BrowserRouter>
+        <ThemeSwitcher />
+        <AppRoutes />
+      </BrowserRouter>
+    </MotionConfig>
   )
 }

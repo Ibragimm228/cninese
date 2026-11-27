@@ -5,7 +5,7 @@ import { tokenWord } from '../../data/curriculum'
 import { toneColor, toneOf } from '../../lib/pinyin'
 import { useApp } from '../../lib/store'
 
-export type ExResult = { ok: boolean; solution?: string; mistakes?: number }
+export type ExResult = { ok: boolean; solution?: string; mistakes?: number; skipped?: boolean }
 
 export type ExProps<T> = {
   ex: T
@@ -49,10 +49,9 @@ export function OptionCard({
       layout
       disabled={disabled}
       onClick={onClick}
-      whileHover={disabled ? undefined : { y: -2 }}
       className={clsx(
         'card3d relative flex items-center gap-3 px-4 py-3.5 text-left',
-        selected && !state && '!border-sky !bg-[#e8f0ff] text-sky-dark',
+        selected && !state && '!border-sky !bg-sky-soft text-sky-dark',
         state === 'correct' && '!border-jade !bg-jade-soft text-jade-dark',
         state === 'wrong' && '!border-wrong !bg-wrong-soft text-wrong-dark shake',
         className,

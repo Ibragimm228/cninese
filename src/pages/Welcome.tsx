@@ -3,8 +3,11 @@ import { AnimatePresence, motion } from 'framer-motion'
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button } from '../components/Button'
+import { Companion3D } from '../components/Companion3D'
 import { Logo } from '../components/Logo'
 import { useApp } from '../lib/store'
+
+const GUIDES = ['kuroko', 'anya', 'ichigo'] as const
 
 const GOALS = [
   { xp: 10, label: 'Легко', time: '5 мин в день', hanzi: '慢' },
@@ -21,16 +24,17 @@ export default function Welcome() {
   const [goal, setGoal] = useState(30)
 
   return (
-    <div className="flex min-h-dvh flex-col bg-paper">
+    <div className="flex min-h-dvh flex-col focus-screen bg-paper">
       <header className="flex items-center justify-between px-5 py-5 md:px-10">
         <Logo />
         <div className="flex gap-1.5">
           {[0, 1, 2].map((i) => (
-            <span key={i} className={clsx('h-2 rounded-full transition-all duration-500', i <= step ? 'w-8 bg-red' : 'w-2 bg-paper-3')} />
+            <span key={i} className={clsx('h-2 rounded-full transition-[width,background-color] duration-150 ease-out', i <= step ? 'w-8 bg-red' : 'w-2 bg-paper-3')} />
           ))}
         </div>
       </header>
-      <main className="mx-auto flex w-full max-w-2xl flex-1 flex-col justify-center px-5 pb-10">
+      <main className="welcome-main mx-auto grid w-full max-w-5xl flex-1 items-center gap-x-10 px-5 pb-10 md:grid-cols-[1fr_minmax(0,22rem)]">
+        <Companion3D key={step} ids={[GUIDES[step]]} className="welcome-guide h-44 w-full md:order-2 md:h-[26rem]" zoom={1.1} />
         <AnimatePresence mode="wait">
           <motion.div
             key={step}
@@ -42,7 +46,7 @@ export default function Welcome() {
             {step === 0 && (
               <div>
                 <p className="font-brush text-8xl text-red">你好</p>
-                <p className="mt-1 text-ink-soft">nǐ hǎo — привет!</p>
+                <p className="mt-1 text-ink-soft">nǐ hǎo, привет</p>
                 <h1 className="mt-6 font-display text-4xl font-bold tracking-tight md:text-5xl">Как тебя зовут?</h1>
                 <input
                   autoFocus
@@ -51,7 +55,7 @@ export default function Welcome() {
                   onKeyDown={(e) => e.key === 'Enter' && setStep(1)}
                   placeholder="Твоё имя"
                   maxLength={24}
-                  className="mt-8 w-full rounded-2xl border-2 border-paper-3 border-b-[5px] bg-[#fffdf8] px-5 py-4 font-display text-xl outline-none focus:border-sky"
+                  className="mt-8 w-full rounded-2xl border-2 border-paper-3 border-b-[5px] bg-card px-5 py-4 font-display text-xl outline-none focus:border-sky"
                 />
                 <Button
                   variant="primary"
@@ -68,15 +72,14 @@ export default function Welcome() {
             {step === 1 && (
               <div>
                 <h1 className="font-display text-4xl font-bold tracking-tight md:text-5xl">Выбери цель дня</h1>
-                <p className="mt-3 text-lg text-ink-soft">Её можно поменять в любой момент в профиле.</p>
                 <div className="mt-8 grid gap-3">
                   {GOALS.map((g) => (
                     <button
                       key={g.xp}
                       onClick={() => setGoal(g.xp)}
-                      className={clsx('card3d flex items-center gap-4 px-5 py-4 text-left', goal === g.xp && '!border-sky !bg-[#e8f0ff]')}
+                      className={clsx('card3d flex items-center gap-4 px-5 py-4 text-left', goal === g.xp && '!border-sky !bg-sky-soft')}
                     >
-                      <span className={clsx('grid size-12 place-items-center rounded-xl font-hanzi text-2xl font-black', goal === g.xp ? 'bg-sky text-white' : 'bg-paper-2')}>
+                      <span className={clsx('grid size-12 place-items-center rounded-xl font-hanzi text-2xl font-semibold', goal === g.xp ? 'bg-sky text-white' : 'bg-paper-2')}>
                         {g.hanzi}
                       </span>
                       <span className="flex-1">
@@ -98,9 +101,7 @@ export default function Welcome() {
                   开始
                 </motion.p>
                 <h1 className="mt-4 font-display text-4xl font-bold tracking-tight">Всё готово!</h1>
-                <p className="mx-auto mt-3 max-w-md text-lg text-ink-soft">
-                  Первый урок займёт 3 минуты. Ты выучишь свои первые китайские слова — включи звук 🔊
-                </p>
+                <p className="mx-auto mt-3 max-w-md text-lg text-ink-soft">Включи звук</p>
                 <Button
                   variant="jade"
                   className="mt-8 w-full"

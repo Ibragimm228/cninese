@@ -12,6 +12,7 @@ export type Exercise = { key: string } & (
   | { type: 'build'; sentence: Sentence; direction: 'ru-zh' | 'zh-ru' | 'listen'; tiles: string[]; answer: string[] }
   | { type: 'fill'; sentence: Sentence; blank: number; options: Word[] }
   | { type: 'write'; word: Word }
+  | { type: 'speak'; hanzi: string; audio?: string; pinyin: string; ru: string; wordIds: string[] }
 )
 
 export type ExerciseType = Exercise['type']
@@ -45,13 +46,13 @@ function conflicts(a: Word, b: Word) {
   )
 }
 
-function distractors(word: Word, n: number, pool: Word[] = allWords): Word[] {
+function distractors(word: Word, n: number, pool: Word[] = allWords, context?: string): Word[] {
   const sameUnit = unitOfWord.get(word.id)?.words ?? []
   const candidates = [...new Set([...shuffle(pool), ...shuffle(sameUnit), ...shuffle(allWords)])]
   const out: Word[] = []
   for (const c of candidates) {
     if (out.length >= n) break
-    if (conflicts(c, word) || out.some((o) => conflicts(o, c))) continue
+    if (context?.includes(c.hanzi) || conflicts(c, word) || out.some((o) => conflicts(o, c))) continue
     out.push(c)
   }
   return out
@@ -64,7 +65,7 @@ function choice(word: Word, direction: 'zh-ru' | 'ru-zh', pool?: Word[]): Exerci
 }
 
 function listen(word: Word, pool?: Word[]): Exercise {
-  return { key: k('listen'), type: 'listen', word, options: shuffle([word, ...distractors(word, 3, pool)]) }
+  return { key: k('listen'), type: 'listen', word, options: shuffle([word, ...distractors(word, 3, pool, word.audio)]) }
 }
 
 function tone(word: Word): Exercise {
@@ -114,12 +115,30 @@ function write(word: Word): Exercise {
   return { key: k('write'), type: 'write', word }
 }
 
+function speakWord(word: Word): Exercise {
+  return { key: k('speak'), type: 'speak', hanzi: word.hanzi, audio: word.audio, pinyin: word.pinyin, ru: word.ru, wordIds: [word.id] }
+}
+
+function speakSentence(sentence: Sentence): Exercise {
+  const words = sentence.tokens.map((t) => tokenWord(t))
+  return {
+    key: k('speak'),
+    type: 'speak',
+    hanzi: sentence.tokens.join(''),
+    pinyin: words.map((w) => w?.pinyin ?? '').filter(Boolean).join(' '),
+    ru: sentence.ru,
+    wordIds: [...new Set(words.map((w) => w?.id).filter((x): x is string => !!x))],
+  }
+}
+
 export type GenOptions = { voice: boolean }
 
 export function exerciseWordIds(ex: Exercise): string[] {
   switch (ex.type) {
     case 'match':
       return ex.words.map((w) => w.id)
+    case 'speak':
+      return ex.wordIds
     case 'build':
     case 'fill':
       return ex.sentence.tokens.map((t) => tokenWord(t)?.id).filter((x): x is string => !!x)
@@ -187,7 +206,7 @@ export function generateLesson(lesson: Lesson, opts: GenOptions): Exercise[] {
   return shuffle(out)
 }
 
-export type PracticeMode = 'review' | 'mistakes' | 'listening' | 'writing' | 'sentences'
+export type PracticeMode = 'review' | 'mistakes' | 'listening' | 'writing' | 'sentences' | 'speaking'
 
 export function generatePractice(mode: PracticeMode, words: Word[], opts: GenOptions): Exercise[] {
   const base = words.length >= 4 ? words : allWords.slice(0, 12)
@@ -201,6 +220,13 @@ export function generatePractice(mode: PracticeMode, words: Word[], opts: GenOpt
       for (const w of pick.slice(0, 8)) out.push(listen(w, base))
       for (const s of sample(sentences, 3)) out.push(build(s, 'listen'))
       return shuffle(out)
+    case 'speaking': {
+      // longer words are recognised far more reliably than single syllables
+      const long = base.filter((w) => !isSingleSyllable(w))
+      for (const w of sample(long.length >= 3 ? long : base, 6)) out.push(speakWord(w))
+      for (const s of sample(sentences, 4)) out.push(speakSentence(s))
+      return out
+    }
     case 'writing': {
       const singles = base.filter(isSingleSyllable)
       for (const w of sample(singles.length ? singles : allWords.filter(isSingleSyllable), 8)) out.push(write(w))

@@ -10,7 +10,7 @@ const styles: Record<Variant, { cls: string; shadow: string }> = {
   wrong: { cls: 'bg-wrong text-white', shadow: '#b3282d' },
   gold: { cls: 'bg-gold text-ink', shadow: '#c98a17' },
   sky: { cls: 'bg-sky text-white', shadow: '#2557c2' },
-  paper: { cls: 'bg-[#fffdf8] text-ink border-2 border-paper-3', shadow: '#e0d7c5' },
+  paper: { cls: 'bg-card text-ink border-2 border-paper-3', shadow: '#e0d7c5' },
   ghost: { cls: 'bg-transparent text-ink-soft border-2 border-paper-3', shadow: '#e0d7c5' },
 }
 

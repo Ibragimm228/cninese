@@ -1,11 +1,12 @@
 import confetti from 'canvas-confetti'
 import clsx from 'clsx'
-import { AnimatePresence, motion } from 'framer-motion'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Navigate, useNavigate, useParams } from 'react-router-dom'
 import { Button } from '../components/Button'
+import { CompanionCelebration, LessonBuddy, type LessonBuddyHandle } from '../components/Companion'
 import { ExerciseView, type ExResult } from '../components/exercises'
-import { BoltIcon, CheckIcon, CloseIcon, FlameIcon, GemIcon, HeartIcon } from '../components/icons'
+import { AchievementIcon, BoltIcon, CheckIcon, ClockIcon, CloseIcon, FlameIcon, GemIcon, HeartIcon } from '../components/icons'
 import { achievements } from '../data/achievements'
 import { lessonById, units } from '../data/curriculum'
 import { exerciseWordIds, generateLesson, generatePractice, type Exercise, type PracticeMode } from '../lib/exercises'
@@ -13,6 +14,7 @@ import { dueWords, isUnlocked, learnedWords, weakWords } from '../lib/progress'
 import { sfx } from '../lib/sounds'
 import { hasChineseVoice } from '../lib/speech'
 import { MAX_HEARTS, REFILL_COST, useApp, type CompletionOutcome } from '../lib/store'
+import { themedMotion } from '../lib/theme'
 
 const PRAISE = ['Отлично!', 'Верно!', 'Великолепно!', '太棒了！', 'Так держать!', 'Супер!', '很好！']
 
@@ -67,7 +69,9 @@ function LessonPlayer({
   exitTo: string
 }) {
   const navigate = useNavigate()
-  const { hearts, loseHeart, recordWord, completeLesson, refillHearts, gems } = useApp()
+  const { hearts, loseHeart, recordWord, completeLesson, refillHearts, gems, theme } = useApp()
+  const reduceMotion = useReducedMotion()
+  const panel = themedMotion(theme, reduceMotion)
   const [queue, setQueue] = useState(exercises)
   const [idx, setIdx] = useState(0)
   const [pending, setPending] = useState<ExResult | null>(null)
@@ -81,6 +85,7 @@ function LessonPlayer({
   const [confirmExit, setConfirmExit] = useState(false)
   const [praise, setPraise] = useState(PRAISE[0])
   const start = useRef(Date.now())
+  const buddy = useRef<LessonBuddyHandle>(null)
   const [elapsed, setElapsed] = useState(0)
 
   const ex = queue[idx]
@@ -96,14 +101,19 @@ function LessonPlayer({
     setOutcome(o)
     setPhase('results')
     sfx.complete()
-    const end = Date.now() + 900
+    if (reduceMotion) return
     const colors = ['#e63b2e', '#f2b33d', '#22a06b', '#3d7bf7']
+    if (theme !== 'moli') {
+      confetti({ particleCount: 22, spread: 50, origin: { y: 0.68 }, colors })
+      return
+    }
+    const end = Date.now() + 900
     ;(function frame() {
       confetti({ particleCount: 5, angle: 60, spread: 70, origin: { x: 0, y: 0.7 }, colors })
       confetti({ particleCount: 5, angle: 120, spread: 70, origin: { x: 1, y: 0.7 }, colors })
       if (Date.now() < end) requestAnimationFrame(frame)
     })()
-  }, [completeLesson, lessonId, xp, answered, correct])
+  }, [completeLesson, lessonId, xp, answered, correct, reduceMotion, theme])
 
   const next = useCallback(() => {
     setChecked(null)
@@ -120,9 +130,15 @@ function LessonPlayer({
       next()
       return
     }
+    // a skipped exercise is neither right nor wrong: nothing is scored or rescheduled
+    if (pending_.skipped) {
+      next()
+      return
+    }
     setChecked(pending_)
     setAnswered((a) => a + 1)
     const ids = exerciseWordIds(ex)
+    buddy.current?.react(pending_.ok, pending_.ok ? combo + 1 : 0)
     if (pending_.ok) {
       sfx.correct()
       setCorrect((c) => c + 1)
@@ -187,7 +203,7 @@ function LessonPlayer({
   const isIntro = ex.type === 'intro'
 
   return (
-    <div className="flex min-h-dvh flex-col bg-paper">
+    <div className="flex min-h-dvh flex-col focus-screen bg-paper">
       <header className="mx-auto flex w-full max-w-5xl items-center gap-4 px-4 pb-2 pt-5 md:px-8 md:pt-8">
         <button
           onClick={() => setConfirmExit(true)}
@@ -199,11 +215,12 @@ function LessonPlayer({
         <div className="relative h-4 flex-1 overflow-hidden rounded-full bg-paper-3">
           <motion.div
             className="relative h-full rounded-full"
-            style={{ background: accent }}
-            animate={{ width: `${Math.max(4, progress * 100)}%` }}
-            transition={{ type: 'spring', damping: 20, stiffness: 120 }}
+            style={{ background: accent, ...(panel && { originX: 0 }) }}
+            animate={panel ? { scaleX: Math.max(.04, progress) } : { width: `${Math.max(4, progress * 100)}%` }}
+            transition={panel?.transition ?? { type: 'spring', damping: 20, stiffness: 120 }}
+            key={panel ? 'scale' : 'width'}
           >
-            <span className="absolute inset-x-2 top-1 h-1 rounded-full bg-white/35" />
+            <span className="absolute inset-x-2 top-1 h-1 rounded-full bg-card/35" />
           </motion.div>
           <AnimatePresence>
             {showCombo && (
@@ -223,7 +240,7 @@ function LessonPlayer({
             <BoltIcon size={22} /> ∞
           </span>
         ) : (
-          <motion.span key={hearts} initial={{ scale: 1.5 }} animate={{ scale: 1 }} className="flex items-center gap-1.5 font-display text-lg font-bold text-wrong">
+          <motion.span key={hearts} initial={panel ? { opacity: .55 } : { scale: 1.5 }} animate={{ opacity: 1, scale: 1 }} transition={panel?.transition} className="flex items-center gap-1.5 font-display text-lg font-bold text-wrong">
             <HeartIcon size={26} empty={hearts === 0} /> {hearts}
           </motion.span>
         )}
@@ -248,15 +265,17 @@ function LessonPlayer({
         <AnimatePresence mode="wait">
           <motion.div
             key={ex.key}
-            initial={{ opacity: 0, x: 40 }}
-            animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -40 }}
-            transition={{ duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
+            initial={panel?.enter ?? { opacity: 0, x: 40 }}
+            animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+            exit={panel ? { opacity: 0, transition: { duration: reduceMotion ? 0 : .12 } } : { opacity: 0, x: -40 }}
+            transition={panel?.transition ?? { duration: 0.35, ease: [0.16, 1, 0.3, 1] }}
           >
             <ExerciseView ex={ex} locked={!!checked} onChange={onChange} />
           </motion.div>
         </AnimatePresence>
       </main>
+
+      <LessonBuddy ref={buddy} />
 
       <footer
         className={clsx(
@@ -271,15 +290,16 @@ function LessonPlayer({
             {checked ? (
               <motion.div
                 key="fb"
-                initial={{ opacity: 0, y: 20 }}
+                initial={panel ? { opacity: 0, y: panel.enter.y } : { opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
+                transition={panel?.transition}
                 className={clsx('flex items-center gap-4', checked.ok ? 'text-jade-dark' : 'text-wrong-dark')}
               >
                 <motion.span
-                  initial={{ scale: 0, rotate: -30 }}
+                  initial={panel ? { scale: panel.enter.scale } : { scale: 0, rotate: -30 }}
                   animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: 'spring', damping: 12 }}
-                  className={clsx('hidden size-16 place-items-center rounded-full bg-white md:grid')}
+                  transition={panel?.transition ?? { type: 'spring', damping: 12 }}
+                  className={clsx('hidden size-16 place-items-center rounded-full bg-card md:grid')}
                 >
                   {checked.ok ? <CheckIcon size={36} /> : <CloseIcon size={32} />}
                 </motion.span>
@@ -364,25 +384,30 @@ function solutionOf(ex: Exercise): string {
       return ex.direction === 'zh-ru' ? ex.sentence.ru : `${ex.sentence.tokens.join('')} — ${ex.sentence.ru}`
     case 'fill':
       return ex.sentence.tokens.join('')
+    case 'speak':
+      return `${ex.hanzi} (${ex.pinyin})`
     default:
       return ''
   }
 }
 
 function Modal({ children, onClose }: { children: React.ReactNode; onClose?: () => void }) {
+  const theme = useApp((s) => s.theme)
+  const panel = themedMotion(theme, useReducedMotion())
   return (
     <motion.div
-      className="fixed inset-0 z-50 grid place-items-end bg-ink/50 backdrop-blur-sm md:place-items-center"
+      className={clsx('fixed inset-0 z-50 grid place-items-end bg-ink/50 md:place-items-center', !panel && 'backdrop-blur-sm')}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      transition={panel?.transition}
       onClick={onClose}
     >
       <motion.div
-        initial={{ y: 60 }}
-        animate={{ y: 0 }}
-        exit={{ y: 60 }}
-        transition={{ type: 'spring', damping: 24, stiffness: 280 }}
+        initial={panel?.enter ?? { y: 60 }}
+        animate={{ y: 0, opacity: 1, scale: 1 }}
+        exit={panel?.enter ?? { y: 60 }}
+        transition={panel?.transition ?? { type: 'spring', damping: 24, stiffness: 280 }}
         className="w-full max-w-md rounded-t-[32px] bg-paper p-8 text-center md:rounded-[32px]"
         onClick={(e) => e.stopPropagation()}
       >
@@ -408,8 +433,13 @@ function Results({
   onNext: () => void
 }) {
   const streak = useApp((s) => s.streak)
+  const theme = useApp((s) => s.theme)
+  const panel = themedMotion(theme, useReducedMotion())
   useEffect(() => {
-    const h = (e: KeyboardEvent) => e.key === 'Enter' && onNext()
+    const h = (e: KeyboardEvent) => {
+      if (e.key !== 'Enter' || (e.target as Element | null)?.closest?.('button, a, [role="dialog"]')) return
+      onNext()
+    }
     window.addEventListener('keydown', h)
     return () => window.removeEventListener('keydown', h)
   }, [onNext])
@@ -417,12 +447,12 @@ function Results({
   const ss = String(seconds % 60).padStart(2, '0')
   const acc = Math.round(accuracy * 100)
   return (
-    <div className="flex min-h-dvh flex-col items-center justify-between bg-paper px-6 py-10">
+    <div className="flex min-h-dvh flex-col items-center justify-between focus-screen bg-paper px-6 py-10">
       <AnimatePresence mode="wait">
         {phase === 'results' && (
-          <motion.div key="r" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, y: -20 }} className="flex w-full max-w-xl flex-1 flex-col items-center justify-center text-center">
+          <motion.div key="r" initial={panel?.enter ?? { opacity: 0 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0, y: panel ? 0 : -20 }} transition={panel?.transition} className="flex w-full max-w-xl flex-1 flex-col items-center justify-center text-center">
             <motion.div
-              initial={{ scale: 0.3, rotate: -20, opacity: 0 }}
+              initial={panel ? false : { scale: 0.3, rotate: -20, opacity: 0 }}
               animate={{ scale: 1, rotate: 0, opacity: 1 }}
               transition={{ type: 'spring', damping: 10, stiffness: 120 }}
               className="relative"
@@ -430,43 +460,44 @@ function Results({
               <span className="absolute inset-0 -z-10 m-auto size-48 rounded-full bg-gold/30 blur-2xl" />
               <span className="font-brush text-[140px] leading-none text-red md:text-[180px]">棒</span>
             </motion.div>
-            <motion.h1 initial={{ y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.25 }} className="mt-2 font-display text-3xl font-bold md:text-4xl">
+            <motion.h1 initial={panel ? false : { y: 20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ delay: 0.25 }} className="mt-2 font-display text-3xl font-bold md:text-4xl">
               {acc === 100 ? 'Идеально! Без ошибок' : 'Урок пройден!'}
             </motion.h1>
             <p className="mt-2 text-ink-soft">bàng — «отлично, класс!»</p>
-            <div className="mt-10 grid w-full grid-cols-3 gap-3">
+            <CompanionCelebration outcome={outcome} />
+            <div className="mt-3 grid w-full grid-cols-3 gap-3">
               {[
                 { label: 'Опыт', value: `+${xp}`, color: '#f2b33d', icon: <BoltIcon size={20} /> },
                 { label: 'Точность', value: `${acc}%`, color: '#22a06b', icon: <CheckIcon size={20} className="text-white" /> },
-                { label: 'Время', value: `${mm}:${ss}`, color: '#3d7bf7', icon: <span className="text-white">⏱</span> },
+                { label: 'Время', value: `${mm}:${ss}`, color: '#3d7bf7', icon: <ClockIcon size={20} className="text-white" /> },
               ].map((s, i) => (
                 <motion.div
                   key={s.label}
-                  initial={{ y: 30, opacity: 0 }}
+                  initial={panel ? false : { y: 30, opacity: 0 }}
                   animate={{ y: 0, opacity: 1 }}
                   transition={{ delay: 0.4 + i * 0.12, type: 'spring', damping: 16 }}
                   className="overflow-hidden rounded-2xl border-2"
                   style={{ borderColor: s.color, background: s.color }}
                 >
                   <p className="flex items-center justify-center gap-1 py-1.5 text-[11px] font-bold uppercase tracking-widest text-white">{s.label}</p>
-                  <p className="flex items-center justify-center gap-1.5 rounded-xl bg-[#fffdf8] py-4 font-display text-xl font-bold" style={{ color: s.color }}>
+                  <p className="flex items-center justify-center gap-1.5 rounded-xl bg-paper py-4 font-display text-xl font-bold" style={{ color: s.color }}>
                     {s.value}
                   </p>
                 </motion.div>
               ))}
             </div>
-            <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }} className="mt-6 flex items-center gap-2 font-semibold text-sky">
+            <motion.p initial={panel ? false : { opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.9 }} className="mt-6 flex items-center gap-2 font-semibold text-sky">
               <GemIcon size={20} /> +{outcome.gemsEarned} кристаллов
               {outcome.goalReached && <span className="ml-2 rounded-full bg-gold/30 px-3 py-1 text-sm text-gold-dark">Цель дня выполнена!</span>}
             </motion.p>
           </motion.div>
         )}
         {phase === 'streak' && (
-          <motion.div key="s" initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }} className="flex flex-1 flex-col items-center justify-center text-center">
-            <motion.div animate={{ scale: [1, 1.1, 1], rotate: [0, -4, 4, 0] }} transition={{ repeat: Infinity, duration: 1.8 }}>
-              <FlameIcon size={160} />
+          <motion.div key="s" initial={panel?.enter ?? { opacity: 0, scale: 0.9 }} animate={{ opacity: 1, y: 0, scale: 1 }} exit={{ opacity: 0 }} transition={panel?.transition} className="flex flex-1 flex-col items-center justify-center text-center">
+            <motion.div animate={panel ? undefined : { scale: [1, 1.1, 1], rotate: [0, -4, 4, 0] }} transition={panel ? undefined : { repeat: Infinity, duration: 1.8 }}>
+              <FlameIcon size={132} className="text-gold" />
             </motion.div>
-            <motion.p initial={{ scale: 2, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', damping: 10 }} className="font-display text-8xl font-black text-[#f08a00]">
+            <motion.p initial={panel ? false : { scale: 2, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} transition={{ type: 'spring', damping: 10 }} className="font-display text-8xl font-black text-[#f08a00]">
               {streak}
             </motion.p>
             <h2 className="font-display text-2xl font-bold">{streak === 1 ? 'Серия началась!' : 'дней подряд!'}</h2>
@@ -474,7 +505,7 @@ function Results({
           </motion.div>
         )}
         {phase === 'achievements' && (
-          <motion.div key="a" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-1 flex-col items-center justify-center text-center">
+          <motion.div key="a" initial={panel?.enter ?? { opacity: 0 }} animate={{ opacity: 1, y: 0, scale: 1 }} transition={panel?.transition} className="flex flex-1 flex-col items-center justify-center text-center">
             <p className="font-display text-xs font-bold uppercase tracking-[0.3em] text-red">Новое достижение</p>
             <div className="mt-6 flex flex-wrap justify-center gap-4">
               {outcome.newAchievements.map((id, i) => {
@@ -482,12 +513,12 @@ function Results({
                 return (
                   <motion.div
                     key={id}
-                    initial={{ rotateY: 180, opacity: 0 }}
+                    initial={panel ? false : { rotateY: 180, opacity: 0 }}
                     animate={{ rotateY: 0, opacity: 1 }}
                     transition={{ delay: i * 0.2, duration: 0.8 }}
-                    className="w-48 rounded-3xl border-2 border-gold border-b-[6px] bg-[#fffdf8] p-6"
+                    className="w-48 rounded-3xl border-2 border-gold border-b-[6px] bg-card p-6"
                   >
-                    <div className="text-6xl">{a.icon}</div>
+                    <AchievementIcon symbol={a.icon} size={39} className="mx-auto text-ink" />
                     <p className="mt-3 font-display text-lg font-bold">{a.title}</p>
                     <p className="text-sm text-ink-soft">{a.desc}</p>
                   </motion.div>

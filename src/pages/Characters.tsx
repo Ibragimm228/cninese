@@ -4,9 +4,9 @@ import { useMemo, useRef, useState } from 'react'
 import { PageHeader } from '../components/AppShell'
 import { Button } from '../components/Button'
 import { HanziWriterBox, type HanziWriterHandle } from '../components/HanziWriterBox'
-import { CloseIcon } from '../components/icons'
+import { BulbIcon, CloseIcon } from '../components/icons'
 import { SpeakButton } from '../components/SpeakButton'
-import { allSentences, units } from '../data/curriculum'
+import { allSentences, allWords, units } from '../data/curriculum'
 import { mnemonics } from '../data/mnemonics'
 import type { Word } from '../data/types'
 import { stripTones } from '../lib/pinyin'
@@ -22,22 +22,22 @@ export default function Characters() {
   const match = (w: Word) =>
     (!query || w.hanzi.includes(q.trim()) || stripTones(w.pinyin.toLowerCase()).replace(/\s/g, '').includes(query.replace(/\s/g, '')) || w.ru.toLowerCase().includes(query)) &&
     (filter === 'all' || (filter === 'learned' ? !!words[w.id] : !words[w.id]))
-  const total = units.reduce((a, u) => a + u.words.length, 0)
-  const learned = Object.keys(words).length
+  const learned = allWords.filter((w) => words[w.id]).length
+  const seen = new Set<string>()
 
   return (
     <div className="mx-auto max-w-[1100px] px-4 pt-6 md:px-8 md:pt-10">
-      <PageHeader kicker="汉字 · Словарь" title="Иероглифы">
+      <PageHeader title="Иероглифы">
         <div className="font-display text-sm font-semibold text-ink-soft">
-          Изучено <span className="text-2xl text-ink">{learned}</span> / {total}
+          Изучено <span className="text-2xl text-ink">{learned}</span> / {allWords.length}
         </div>
       </PageHeader>
-      <div className="sticky top-[60px] z-10 -mx-4 mb-8 flex flex-col gap-3 bg-paper/90 px-4 py-3 backdrop-blur md:top-0 md:flex-row">
+      <div className="sticky top-[var(--app-topbar-height)] z-10 -mx-4 mb-8 flex flex-col gap-3 bg-paper/90 px-4 py-3 backdrop-blur md:flex-row">
         <input
           value={q}
           onChange={(e) => setQ(e.target.value)}
           placeholder="Поиск: 你好, nihao, привет…"
-          className="flex-1 rounded-2xl border-2 border-paper-3 bg-[#fffdf8] px-5 py-3 text-lg outline-none focus:border-sky"
+          className="flex-1 rounded-2xl border-2 border-paper-3 bg-card px-5 py-3 text-lg outline-none focus:border-sky"
         />
         <div className="flex gap-2">
           {(['all', 'learned', 'new'] as const).map((f) => (
@@ -48,13 +48,17 @@ export default function Characters() {
         </div>
       </div>
       {units.map((u) => {
-        const list = u.words.filter(match)
+        const list = u.words.filter((w) => {
+          if (seen.has(w.id) || !match(w)) return false
+          seen.add(w.id)
+          return true
+        })
         if (!list.length) return null
         return (
           <section key={u.id} className="mb-10">
             <h2 className="mb-4 flex items-center gap-3 font-display text-lg font-bold">
               <span className="size-3 rounded-full" style={{ background: u.color }} />
-              {u.index + 1}. {u.title}
+              HSK {u.level} · {u.index + 1}. {u.title}
             </h2>
             <div className="grid grid-cols-3 gap-3 sm:grid-cols-4 md:grid-cols-6">
               {list.map((w) => {
@@ -63,11 +67,10 @@ export default function Characters() {
                   <motion.button
                     key={w.id}
                     layout
-                    whileHover={{ y: -4 }}
                     onClick={() => setOpen(w)}
                     className={clsx('card3d relative flex flex-col items-center px-2 pb-3 pt-4', !words[w.id] && 'opacity-70')}
                   >
-                    <span className="font-hanzi text-3xl font-semibold">{w.hanzi}</span>
+                    <span className={clsx('max-w-full break-all font-hanzi font-semibold', w.hanzi.length > 3 ? 'text-xl' : 'text-3xl')}>{w.hanzi}</span>
                     <span className="mt-1 text-xs text-ink-soft">{w.pinyin}</span>
                     <span className="mt-0.5 line-clamp-1 text-xs font-semibold">{w.ru}</span>
                     {words[w.id] && <span className="absolute inset-x-3 bottom-1.5 h-1 rounded-full" style={{ background: `linear-gradient(90deg, ${u.color} ${st * 100}%, #e0d7c5 ${st * 100}%)` }} />}
@@ -101,7 +104,6 @@ function WordDrawer({ word, onClose }: { word: Word; onClose: () => void }) {
       >
         <div className="flex items-start justify-between">
           <div>
-            <p className="text-5xl">{word.emoji}</p>
             <h2 className="mt-3 font-hanzi text-6xl font-semibold">{word.hanzi}</h2>
             <p className="mt-2 text-2xl font-medium">{word.pinyin}</p>
             <p className="font-display text-xl font-semibold">{word.ru}</p>
@@ -111,16 +113,16 @@ function WordDrawer({ word, onClose }: { word: Word; onClose: () => void }) {
           </button>
         </div>
         <div className="mt-4 flex gap-2">
-          <SpeakButton text={word.hanzi} />
-          <SpeakButton text={word.hanzi} slow />
+          <SpeakButton text={word.audio ?? word.hanzi} />
+          <SpeakButton text={word.audio ?? word.hanzi} slow />
         </div>
-        {word.note && <p className="mt-5 rounded-2xl bg-gold/20 p-4 text-sm">💡 {word.note}</p>}
+        {word.note && <p className="mt-5 rounded-2xl bg-gold/20 p-4 text-sm"><BulbIcon size={16} className="mr-1 inline-block align-text-bottom" /> {word.note}</p>}
         {chars.some((c) => mnemonics[c]) && (
           <>
             <h3 className="mb-3 mt-8 font-display text-sm font-bold uppercase tracking-widest text-ink-soft">Как запомнить</h3>
             <div className="space-y-3">
               {chars.filter((c) => mnemonics[c]).map((c) => (
-                <div key={c} className="rounded-3xl border-2 border-paper-3 bg-[#fffdf8] p-4">
+                <div key={c} className="rounded-3xl border-2 border-paper-3 bg-card p-4">
                   <div className="flex flex-wrap items-center gap-2">
                     <span className="font-hanzi text-4xl font-semibold text-red">{c}</span>
                     {mnemonics[c].parts.length > 0 && <span className="text-ink-soft">=</span>}
@@ -149,7 +151,7 @@ function WordDrawer({ word, onClose }: { word: Word; onClose: () => void }) {
             ))}
           </div>
         )}
-        <div className="flex flex-col items-center rounded-3xl border-2 border-paper-3 bg-[#fffdf8] p-4">
+        <div className="flex flex-col items-center rounded-3xl border-2 border-paper-3 bg-card p-4">
           <HanziWriterBox ref={ref} key={`${chars[ci]}-${quiz}`} char={chars[ci]} size={260} mode={quiz ? 'quiz' : 'animate'} />
           <div className="mt-4 flex gap-2">
             <Button variant="paper" onClick={() => (quiz ? setQuiz(false) : ref.current?.animate())}>Анимация</Button>
@@ -161,7 +163,7 @@ function WordDrawer({ word, onClose }: { word: Word; onClose: () => void }) {
             <h3 className="mb-3 mt-8 font-display text-sm font-bold uppercase tracking-widest text-ink-soft">Примеры</h3>
             <div className="space-y-2">
               {examples.map((s) => (
-                <div key={s.id} className="flex items-center gap-3 rounded-2xl border-2 border-paper-3 bg-[#fffdf8] p-3">
+                <div key={s.id} className="flex items-center gap-3 rounded-2xl border-2 border-paper-3 bg-card p-3">
                   <SpeakButton text={s.tokens.join('')} size="sm" />
                   <div>
                     <p className="font-hanzi text-xl">{s.tokens.join('')}</p>

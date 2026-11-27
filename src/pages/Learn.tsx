@@ -1,38 +1,72 @@
-import clsx from 'clsx'
-import { AnimatePresence, motion } from 'framer-motion'
-import { useEffect, useRef, useState } from 'react'
-import { Navigate, useNavigate } from 'react-router-dom'
+import { AnimatePresence, motion, useReducedMotion } from 'framer-motion'
+import { useState } from 'react'
+import { Link, Navigate } from 'react-router-dom'
 import { Button } from '../components/Button'
-import { BookIcon, CheckIcon, LockIcon, StarIcon, TrophyIcon } from '../components/icons'
+import { CompanionCard } from '../components/Companion'
+import { BookIcon, CheckIcon, StarIcon, TrophyIcon } from '../components/icons'
 import { RightRail } from '../components/RightRail'
-import { lessonsOfUnit, units, wordById } from '../data/curriculum'
-import type { Lesson, Unit } from '../data/types'
-import { lessonStatus, unitProgress, type LessonStatus } from '../lib/progress'
+import { hskLevels, lessons, lessonsOfUnit, units, wordById } from '../data/curriculum'
+import type { HskLevel, Lesson, Unit } from '../data/types'
+import { currentLessonIndex, lessonStatus, unitProgress, type LessonStatus } from '../lib/progress'
 import { useApp } from '../lib/store'
-
-const OFFSETS = [0, 52, 78, 52, 0, -52, -78, -52]
+import { themedMotion } from '../lib/theme'
 
 export default function Learn() {
   const s = useApp()
   const [tipUnit, setTipUnit] = useState<Unit | null>(null)
-  const currentRef = useRef<HTMLDivElement>(null)
-
-  useEffect(() => {
-    const t = setTimeout(() => currentRef.current?.scrollIntoView({ behavior: 'smooth', block: 'center' }), 350)
-    return () => clearTimeout(t)
-  }, [])
-
+  const [openLesson, setOpenLesson] = useState<string | null>(null)
+  const [selectedLevel, setSelectedLevel] = useState<HskLevel | null>(null)
+  const next = lessons[currentLessonIndex(s)]
+  const level = selectedLevel ?? units.find((unit) => unit.id === next?.unitId)?.level ?? 3
+  const levelUnits = units.filter((unit) => unit.level === level)
+  const levelLessons = levelUnits.flatMap((unit) => lessonsOfUnit(unit.id))
+  const completed = levelLessons.filter((lesson) => s.lessons[lesson.id]).length
   if (!s.onboarded) return <Navigate to="/welcome" replace />
 
   return (
-    <div className="mx-auto flex max-w-[1100px] gap-10 px-4 pt-6 md:px-8 md:pt-10">
-      <div className="min-w-0 flex-1">
-        {units.map((u) => (
-          <UnitSection key={u.id} unit={u} onTip={() => setTipUnit(u)} currentRef={currentRef} />
+    <div className="learn-layout">
+      <div className="learn-intro">
+        <h1>你好, {s.name}<span>.</span></h1>
+      </div>
+
+      <section className="learn-hero" aria-label="Следующий шаг">
+        <div className="learn-hero-grid" aria-hidden="true" />
+        <span className="learn-hero-hanzi" aria-hidden="true">学</span>
+        <div className="learn-hero-copy">
+          <h2>{next ? next.title : 'Курс HSK 1–3 пройден!'}</h2>
+          <Link className="editorial-cta" to={next ? `/lesson/${next.id}` : '/practice'}>
+            {next ? 'К уроку' : 'Практика'}
+          </Link>
+        </div>
+        <span className="learn-hero-index" aria-hidden="true">学 / STUDY</span>
+      </section>
+
+      <div className="learn-pet"><CompanionCard /></div>
+      <div className="learn-track">
+        <div className="mb-5 flex flex-wrap gap-2" role="group" aria-label="Уровень HSK">
+          {hskLevels.map((value) => (
+            <button key={value} type="button" aria-pressed={value === level}
+              onClick={() => setSelectedLevel(value)}
+              className={`rounded-full border border-paper-3 px-4 py-2 text-sm font-bold ${value === level ? 'bg-ink text-paper' : 'bg-card text-ink-soft'}`}>
+              HSK {value}
+            </button>
+          ))}
+        </div>
+        <div className="track-heading">
+          <h2>HSK {level}</h2>
+          <span>{completed} / {levelLessons.length} уроков</span>
+        </div>
+        {levelUnits.map((unit) => (
+          <UnitSection
+            key={unit.id}
+            unit={unit}
+            onTip={() => setTipUnit(unit)}
+            openLesson={openLesson}
+            onToggle={(id) => setOpenLesson((open) => (open === id ? null : id))}
+          />
         ))}
         <div className="my-16 text-center">
           <p className="font-brush text-7xl text-red">加油</p>
-          <p className="mt-2 font-display text-sm uppercase tracking-[0.3em] text-ink-soft">Новые юниты скоро</p>
         </div>
       </div>
       <RightRail />
@@ -44,228 +78,102 @@ export default function Learn() {
 function UnitSection({
   unit,
   onTip,
-  currentRef,
+  openLesson,
+  onToggle,
 }: {
   unit: Unit
   onTip: () => void
-  currentRef: React.RefObject<HTMLDivElement | null>
+  openLesson: string | null
+  onToggle: (id: string) => void
 }) {
   const s = useApp()
-  const ls = lessonsOfUnit(unit.id)
-  const prog = unitProgress(s, unit.id)
-  const [open, setOpen] = useState<string | null>(null)
+  const list = lessonsOfUnit(unit.id)
+  const progress = unitProgress(s, unit.id)
 
   return (
-    <section className="mb-14">
-      <motion.div
-        initial={{ opacity: 0, y: 24 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true, margin: '-60px' }}
-        transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
-        className="relative overflow-hidden rounded-[28px] p-6 text-white md:p-7"
-        style={{ background: unit.color, boxShadow: `0 6px 0 ${unit.shadow}` }}
-      >
-        <span className="pointer-events-none absolute -right-4 -top-8 select-none font-brush text-[150px] leading-none text-white/15 md:text-[180px]">
-          {unit.hanzi}
-        </span>
-        <div className="relative flex items-end justify-between gap-4">
-          <div>
-            <p className="font-display text-xs font-semibold uppercase tracking-[0.25em] text-white/80">
-              Юнит {unit.index + 1} · HSK 1
-            </p>
-            <h2 className="mt-1.5 font-display text-2xl font-bold md:text-3xl">{unit.title}</h2>
-            <p className="mt-1 text-white/85">{unit.subtitle}</p>
-          </div>
-          <button
-            onClick={onTip}
-            className="btn3d flex shrink-0 items-center gap-2 rounded-2xl border-2 border-white/40 bg-white/10 px-4 py-3 text-xs text-white backdrop-blur"
-            style={{ ['--btn-shadow' as string]: unit.shadow }}
-          >
-            <BookIcon size={18} /> <span className="hidden sm:inline">Подсказка</span>
-          </button>
+    <section className="unit-group">
+      <div className="unit-heading">
+        <div className="unit-stamp" style={{ color: unit.color }} aria-hidden="true">{unit.hanzi[0]}</div>
+        <div>
+          <p className="studio-label">Юнит {unit.index + 1}</p>
+          <h3>{unit.title}</h3>
         </div>
-        <div className="relative mt-5 h-2.5 overflow-hidden rounded-full bg-black/15">
-          <motion.div
-            className="h-full rounded-full bg-white"
-            initial={{ width: 0 }}
-            whileInView={{ width: `${prog.ratio * 100}%` }}
-            viewport={{ once: true }}
-            transition={{ duration: 1.2, ease: [0.16, 1, 0.3, 1] }}
-          />
-        </div>
-      </motion.div>
-
-      <div className="relative mt-10 flex flex-col items-center gap-5">
-        {ls.map((l, i) => {
-          const status = lessonStatus(s, l)
-          return (
-            <div
-              key={l.id}
-              ref={status === 'current' ? currentRef : undefined}
-              className="relative"
-              style={{ transform: `translateX(${OFFSETS[(i + unit.index * 3) % OFFSETS.length]}px)` }}
-            >
-              <LessonNode
-                lesson={l}
-                unit={unit}
-                status={status}
-                open={open === l.id}
-                onToggle={() => setOpen(open === l.id ? null : l.id)}
-              />
-            </div>
-          )
-        })}
-        <span
-          aria-hidden
-          className={clsx(
-            'pointer-events-none absolute top-6 hidden select-none font-brush text-[120px] leading-none opacity-[0.08] md:block',
-            unit.index % 2 ? 'left-0' : 'right-0',
-          )}
-          style={{ color: unit.color }}
-        >
-          {unit.hanzi[0]}
-        </span>
+        <button type="button" className="editorial-icon" onClick={onTip} aria-label={`Подсказка: ${unit.title}`} title="Подсказка"><BookIcon size={19} /></button>
+      </div>
+      <div className="unit-progress" role="progressbar" aria-label={`Прогресс: ${unit.title}`} aria-valuenow={Math.round(progress.ratio * 100)}>
+        <span style={{ width: `${progress.ratio * 100}%`, background: unit.color }} />
+      </div>
+      <div>
+        {list.map((lesson, index) => (
+          <LessonRow key={lesson.id} lesson={lesson} index={index} status={lessonStatus(s, lesson)} open={openLesson === lesson.id} onToggle={() => onToggle(lesson.id)} />
+        ))}
       </div>
     </section>
   )
 }
 
-function LessonNode({
-  lesson,
-  unit,
-  status,
-  open,
-  onToggle,
-}: {
-  lesson: Lesson
-  unit: Unit
-  status: LessonStatus
-  open: boolean
-  onToggle: () => void
-}) {
-  const navigate = useNavigate()
+function LessonRow({ lesson, index, status, open, onToggle }: { lesson: Lesson; index: number; status: LessonStatus; open: boolean; onToggle: () => void }) {
   const rec = useApp((s) => s.lessons[lesson.id])
-  const Icon = lesson.kind === 'test' ? TrophyIcon : lesson.kind === 'review' ? BookIcon : StarIcon
-  const locked = status === 'locked'
-  const done = status === 'done'
-  const color = locked ? '#e0d7c5' : done ? '#f2b33d' : unit.color
-  const shadow = locked ? '#cbc0aa' : done ? '#c98a17' : unit.shadow
-  const words = lesson.newWordIds.map((id) => wordById.get(id)!)
-  const big = lesson.kind === 'test'
+  const theme = useApp((s) => s.theme)
+  const transition = themedMotion(theme, useReducedMotion())?.transition
+  const Icon = status === 'done' ? CheckIcon : lesson.kind === 'test' ? TrophyIcon : lesson.kind === 'review' ? BookIcon : StarIcon
+  const description = status === 'locked' ? 'Пройди предыдущие уроки, чтобы открыть этот.'
+    : lesson.kind === 'learn' ? `Новые слова: ${lesson.newWordIds.map((id) => wordById.get(id)!.hanzi).join(' · ')}`
+    : lesson.kind === 'review' ? 'Закрепи все слова и фразы юнита.' : 'Финальная проверка юнита. Без подсказок!'
 
   return (
-    <motion.div
-      className="relative flex flex-col items-center"
-      initial={{ opacity: 0, scale: 0.6, y: 24 }}
-      whileInView={{ opacity: 1, scale: 1, y: 0 }}
-      viewport={{ once: true, margin: '-40px' }}
-      whileHover={locked ? undefined : { scale: 1.06 }}
-      transition={{ type: 'spring', stiffness: 380, damping: 22 }}
-    >
-      {status === 'current' && !open && (
-        <motion.div
-          className="absolute left-[calc(100%+14px)] top-6 z-10 hidden whitespace-nowrap sm:block rounded-xl border-2 border-paper-3 bg-[#fffdf8] px-3 py-1.5 font-display text-xs font-bold uppercase tracking-wider"
-          style={{ color: unit.color }}
-          animate={{ x: [0, 6, 0] }}
-          transition={{ repeat: Infinity, duration: 1.6, ease: 'easeInOut' }}
-        >
-          Начать
-          <span className="absolute -left-[7px] top-1/2 size-3 -translate-y-1/2 rotate-45 border-b-2 border-l-2 border-paper-3 bg-[#fffdf8]" />
-        </motion.div>
-      )}
-      <button
-        onClick={onToggle}
-        className={clsx(
-          'relative grid place-items-center rounded-full transition-transform active:translate-y-[6px]',
-          big ? 'size-[88px]' : 'size-[74px]',
-        )}
-        style={{ background: color, boxShadow: `0 7px 0 ${shadow}` }}
-        aria-label={`${lesson.title}${locked ? ' (закрыт)' : ''}`}
-      >
-        {status === 'current' && (
-          <span className="absolute -inset-[10px] rounded-full border-[6px] border-paper-3">
-            <span className="pulse-ring absolute inset-0 rounded-full" style={{ color: unit.color }} />
-          </span>
-        )}
-        <span className="absolute inset-x-3 top-2 h-3 rounded-full bg-white/25" />
-        {locked ? (
-          <LockIcon size={30} className="text-[#a99f8a]" />
-        ) : done && lesson.kind === 'learn' ? (
-          <CheckIcon size={34} className="text-white" />
-        ) : (
-          <Icon size={big ? 40 : 34} className="text-white" />
-        )}
+    <div className="lesson-row" data-status={status}>
+      <button type="button" onClick={onToggle} aria-expanded={open}>
+        <span className="lesson-number">{String(index + 1).padStart(2, '0')}</span>
+        <span className="lesson-title">{lesson.title}</span>
+        {status === 'current' && <span className="lesson-now">СЕЙЧАС</span>}
+        <span className="lesson-status" aria-label={status === 'locked' ? 'Закрыт' : status === 'done' ? 'Пройден' : undefined}><Icon size={17} /></span>
       </button>
-
-      <AnimatePresence>
+      <AnimatePresence initial={false}>
         {open && (
           <motion.div
-            initial={{ opacity: 0, y: -8, scale: 0.95 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -8, scale: 0.95 }}
-            transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute top-[calc(100%+18px)] z-20 w-72 rounded-3xl p-5 text-white"
-            style={{ background: locked ? '#3a3835' : unit.color, boxShadow: `0 6px 0 ${locked ? '#1d1c1a' : unit.shadow}` }}
+            initial={transition ? { opacity: 0 } : { height: 0, opacity: 0 }}
+            animate={transition ? { opacity: 1 } : { height: 'auto', opacity: 1 }}
+            exit={transition ? undefined : { height: 0, opacity: 0 }}
+            transition={transition ?? { duration: 0.22 }}
+            className="overflow-hidden"
           >
-            <span
-              className="absolute -top-2 left-1/2 size-4 -translate-x-1/2 rotate-45"
-              style={{ background: locked ? '#3a3835' : unit.color }}
-            />
-            <h4 className="font-display text-lg font-bold">{lesson.title}</h4>
-            <p className="mt-1 text-sm text-white/85">
-              {locked
-                ? 'Пройди предыдущие уроки, чтобы открыть этот.'
-                : lesson.kind === 'learn'
-                  ? `Новые слова: ${words.map((w) => w.hanzi).join(' · ')}`
-                  : lesson.kind === 'review'
-                    ? 'Закрепи все слова и фразы юнита.'
-                    : 'Финальная проверка юнита. Без подсказок!'}
-            </p>
-            {rec && (
-              <p className="mt-2 text-xs font-semibold uppercase tracking-wider text-white/75">
-                Лучшая точность: {Math.round(rec.bestAccuracy * 100)}%
-              </p>
-            )}
-            {!locked && (
-              <Button
-                variant="paper"
-                className="mt-4 w-full border-0"
-                style={{ color: unit.color }}
-                onClick={() => navigate(`/lesson/${lesson.id}`)}
-              >
-                {done ? 'Повторить +5 XP' : `Начать +${lesson.kind === 'test' ? 25 : 15} XP`}
-              </Button>
-            )}
+            <div className="lesson-details">
+              <p>{description}</p>
+              {rec && <p>Лучшая точность: {Math.round(rec.bestAccuracy * 100)}%</p>}
+              {status !== 'locked' && <Link className="editorial-cta" to={`/lesson/${lesson.id}`}>{status === 'done' ? 'Повторить +5 XP' : `Начать +${lesson.kind === 'test' ? 25 : 15} XP`}</Link>}
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
-    </motion.div>
+    </div>
   )
 }
 
 function TipModal({ unit, onClose }: { unit: Unit; onClose: () => void }) {
+  const theme = useApp((s) => s.theme)
+  const panel = themedMotion(theme, useReducedMotion())
   return (
     <motion.div
-      className="fixed inset-0 z-50 grid place-items-center bg-ink/60 p-4 backdrop-blur-sm"
+      className={`fixed inset-0 z-50 grid place-items-center bg-ink/60 p-4 ${panel ? '' : 'backdrop-blur-sm'}`}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
+      transition={panel?.transition}
       onClick={onClose}
     >
       <motion.div
-        initial={{ y: 40, opacity: 0, rotate: -2 }}
-        animate={{ y: 0, opacity: 1, rotate: 0 }}
-        exit={{ y: 40, opacity: 0 }}
-        transition={{ type: 'spring', damping: 22, stiffness: 260 }}
+        initial={panel?.enter ?? { y: 40, opacity: 0 }}
+        animate={{ y: 0, scale: 1, opacity: 1 }}
+        exit={panel?.enter ?? { y: 40, opacity: 0 }}
+        transition={panel?.transition ?? { type: 'spring', damping: 22, stiffness: 260 }}
         className="relative w-full max-w-lg overflow-hidden rounded-[32px] bg-paper p-8"
         onClick={(e) => e.stopPropagation()}
       >
         <span className="pointer-events-none absolute -right-6 -top-10 font-brush text-[200px] leading-none opacity-10" style={{ color: unit.color }}>
           {unit.hanzi[0]}
         </span>
-        <p className="font-display text-xs font-semibold uppercase tracking-[0.25em]" style={{ color: unit.color }}>
-          Юнит {unit.index + 1} · Грамматика
-        </p>
+        <p className="studio-label text-red">Юнит {unit.index + 1}, грамматика</p>
         <h3 className="mt-2 font-display text-3xl font-bold">{unit.tip.title}</h3>
         <p className="mt-4 text-lg leading-relaxed text-ink-2">{unit.tip.body}</p>
         <div className="mt-6 grid grid-cols-3 gap-2 sm:grid-cols-4">
@@ -276,9 +184,7 @@ function TipModal({ unit, onClose }: { unit: Unit; onClose: () => void }) {
             </div>
           ))}
         </div>
-        <Button variant="ink" className="mt-7 w-full" onClick={onClose}>
-          Понятно
-        </Button>
+        <Button variant="ink" className="mt-7 w-full" onClick={onClose}>Понятно</Button>
       </motion.div>
     </motion.div>
   )

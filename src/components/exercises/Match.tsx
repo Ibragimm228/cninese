@@ -26,7 +26,10 @@ export function MatchEx({ ex, onChange }: ExProps<Extract<Exercise, { type: 'mat
 
   const tap = (side: Side, id: string) => {
     if (done.includes(id)) return
-    if (side === 'zh') void speak(ex.words.find((w) => w.id === id)!.hanzi, rate)
+    if (side === 'zh') {
+      const word = ex.words.find((w) => w.id === id)!
+      void speak(word.audio ?? word.hanzi, rate)
+    }
     if (!sel || sel.side === side) {
       sfx.tap()
       setSel({ side, id })
@@ -58,7 +61,7 @@ export function MatchEx({ ex, onChange }: ExProps<Extract<Exercise, { type: 'mat
         animate={isDone ? { opacity: 0.35, scale: 0.97 } : { opacity: 1, scale: 1 }}
         className={clsx(
           'card3d flex min-h-[68px] items-center justify-center px-3 py-2 text-center',
-          isSel && '!border-sky !bg-[#e8f0ff] text-sky-dark',
+          isSel && '!border-sky !bg-sky-soft text-sky-dark',
           isWrong && '!border-wrong !bg-wrong-soft text-wrong-dark shake',
           isDone && '!border-jade !bg-jade-soft text-jade-dark',
         )}
@@ -79,6 +82,7 @@ export function MatchEx({ ex, onChange }: ExProps<Extract<Exercise, { type: 'mat
               w.id,
               <span className="flex flex-col">
                 <span className="font-hanzi text-2xl font-semibold">{w.hanzi}</span>
+                {w.sense && <span className="text-xs text-ink-soft">{w.pinyin} · {w.sense}</span>}
                 {showPinyin && <span className="text-xs text-ink-soft">{w.pinyin}</span>}
               </span>,
             ),
