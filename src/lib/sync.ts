@@ -106,7 +106,9 @@ export function startSync() {
     if (e.key === KEY && session()?.token !== owner) location.reload()
   })
   useApp.subscribe((s, prev) => {
-    if (!session() || (s.xp === prev.xp && s.words === prev.words && s.lessons === prev.lessons && s.streak === prev.streak)) return
+    // everything but the look of the site is saved, including the companion and settings
+    const changed = (Object.keys(s) as (keyof typeof s)[]).some((k) => k !== 'theme' && s[k] !== prev[k])
+    if (!session() || !changed) return
     clearTimeout(timer)
     timer = setTimeout(() => void push().catch(() => {}), 2500)
   })
