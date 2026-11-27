@@ -37,6 +37,11 @@ test('all three HSK lists have distinct entries and working lessons and sentence
   }
 })
 
+test('HSK 3 distinguishes the moon from the comparative marker', () => {
+  assert.equal(tokenWord('月亮').ru, 'луна')
+  assert.match(tokenWord('越').ru, /чем…, тем…/)
+})
+
 test('mock exams have unique choices and level-specific scoring, with writing at HSK 3', () => {
   assert.deepEqual(hskLevels.map((level) => examScale[level].pass), [120, 120, 180])
   for (const level of hskLevels) {
