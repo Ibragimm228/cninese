@@ -42,6 +42,10 @@ test('HSK 3 distinguishes the moon from the comparative marker', () => {
   assert.match(tokenWord('越').ru, /чем…, тем…/)
 })
 
+test('the weekly schedule sentence refers to every week, not every day', () => {
+  assert.equal(sentenceById.get('hsk2-u5-s2').ru, 'Я каждую неделю очень занят')
+})
+
 test('mock exams have unique choices and level-specific scoring, with writing at HSK 3', () => {
   assert.deepEqual(hskLevels.map((level) => examScale[level].pass), [120, 120, 180])
   for (const level of hskLevels) {
