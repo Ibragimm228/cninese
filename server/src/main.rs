@@ -141,15 +141,17 @@ async fn register(State(db): State<Db>, Json(c): Json<Credentials>) -> Result<Js
 }
 
 async fn login(State(db): State<Db>, Json(c): Json<Credentials>) -> Result<Json<Session>, ApiError> {
-    let db = db.lock().unwrap();
+    // the lock is released before the slow password check so it cannot stall other requests
     let row: Option<(i64, String, String)> = db
+        .lock()
+        .unwrap()
         .query_row("SELECT id, name, password FROM users WHERE name = ?1", [c.name.trim()], |r| Ok((r.get(0)?, r.get(1)?, r.get(2)?)))
         .optional()?;
     let denied = || ApiError(StatusCode::UNAUTHORIZED, "wrong name or password".into());
     let (id, name, hash) = row.ok_or_else(denied)?;
     let parsed = PasswordHash::new(&hash).map_err(|_| denied())?;
     Argon2::default().verify_password(c.password.as_bytes(), &parsed).map_err(|_| denied())?;
-    let token = open_session(&db, id)?;
+    let token = open_session(&db.lock().unwrap(), id)?;
     Ok(Json(Session { token, name }))
 }
 
@@ -178,6 +180,9 @@ struct Snapshot {
     state: Value,
     /// day keys of the client's current week, Monday first
     week: Vec<String>,
+    /// `updatedAt` of the copy this device last saw; 0 when it has seen none
+    #[serde(default)]
+    base: i64,
 }
 
 async fn put_progress(State(db): State<Db>, headers: HeaderMap, Json(s): Json<Snapshot>) -> Result<Json<Value>, ApiError> {
@@ -193,6 +198,10 @@ async fn put_progress(State(db): State<Db>, headers: HeaderMap, Json(s): Json<Sn
     let mut db = db.lock().unwrap();
     let user = user_of(&db, &headers)?;
     let tx = db.transaction()?;
+    let stored: Option<i64> = tx.query_row("SELECT updated_at FROM progress WHERE user_id = ?1", [user], |r| r.get(0)).optional()?;
+    if stored.is_some_and(|at| at != s.base) {
+        return Err(ApiError(StatusCode::CONFLICT, "progress changed on another device".into()));
+    }
     tx.execute(
         "INSERT INTO progress (user_id, state, xp, streak, updated_at) VALUES (?1, ?2, ?3, ?4, ?5)
          ON CONFLICT(user_id) DO UPDATE SET state = ?2, xp = ?3, streak = ?4, updated_at = ?5",
