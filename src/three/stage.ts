@@ -182,7 +182,8 @@ export class ChibiStage {
 
   wave() { this.chibis.forEach((c) => c.wave()); this.start() }
   celebrate() { this.chibis.forEach((c) => c.celebrate()); this.start() }
-  react(mood: 'happy' | 'sad') { this.chibis.forEach((c) => c.react(mood)); this.start() }
+  react(mood: 'happy' | 'sad', special?: boolean) { this.chibis.forEach((c) => c.react(mood, special)); this.start() }
+  perform(name?: string) { this.chibis.forEach((c) => c.perform(name)); this.start() }
   /** dozing companions stay asleep through later cast changes */
   sleep(on: boolean) { this.asleep = on; this.chibis.forEach((c) => c.sleep(on)); this.start() }
 

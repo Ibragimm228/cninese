@@ -93,6 +93,12 @@ def outfit(m, b):
             marks += fan(coat, (s * 0.2, 1.95), [(s * 0.11, 1.8), (s * 0.16, 1.74)], 0.018, sg)
             marks += fan(coat, (s * 0.26, 0.52), [(s * 0.24, 0.8)], 0.022, sg) + fan(coat, (s * 0.12, 0.52), [(s * 0.13, 0.74)], 0.018, sg)
     coat.add(m, 'coat', skin, color=paint, n=128, rows=72, subdiv=1, ripple=(8, 0.045), post=folds(marks))
+    # pocket flaps, and seams where the sleeves are set in
+    for s in (1, -1):
+        coat.decal(m, s * 0.1, s * 0.21, 1.17, 1.22, 'trim', skin, off=0.007, nx=8, ny=3)
+        a = np.linspace(0, math.tau, 40, endpoint=False)
+        ring = j['shoulder'] * [s, 1, 1] + np.stack([s * (-0.035 - 0.04 * np.cos(a)), -0.035 + 0.1 * np.cos(a), 0.108 * np.sin(a)], axis=1)
+        m.add('body', pipe(ring, 0.007, 6), 'trim', A.torso_skin(b))
     # raised edging down both sides of the opening
     for s in (1, -1):
         ys = np.linspace(0.5, 2.06, 40)

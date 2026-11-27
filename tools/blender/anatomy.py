@@ -266,7 +266,8 @@ def draw_mouth(face, mo):
     c = lin(mo.get('color', '#8a3d3a'))
     bend = mo.get('bend', 0.006)
     face.line('mouth_rest', np.array([[-w / 2, y + bend], [0, y - bend], [w / 2, y + bend]]), mo.get('line', 0.0075), c, 2, n=20, taper=(0.2, 0.2))
-    # open mouth: a soft D with a tongue
+    face.line('mouth_rest', np.array([[-w * 0.22, y - 0.02], [0, y - 0.024], [w * 0.22, y - 0.02]]), 0.005, lin(mo.get('lip', '#eaa694')), 2, n=10, taper=(0.1, 0.1))
+    # open mouth: a soft D with a tongue and a row of teeth
     ow, oh = mo.get('open_w', w * 1.25), mo.get('open_h', 0.06)
     u = np.linspace(-1, 1, 24)
     top = np.stack([u * ow / 2, y + 0.012 + 0 * u - np.abs(u) ** 3 * 0.004], axis=1)
@@ -274,6 +275,7 @@ def draw_mouth(face, mo):
     face.band('mouth_open', top, bot, lin(mo.get('inside', '#7a2430')), 2, rows=5)
     tongue = np.stack([u * ow / 3.2, y + 0.012 - oh * (1 - np.abs(u) ** 2.4) ** 0.6 * 0.93], axis=1)
     tongue_top = np.stack([u * ow / 3.2, y + 0.012 - oh * 0.45 - (1 - u ** 2) * -0.012], axis=1)
+    face.band('mouth_open', top, np.stack([u * ow / 2, y + 0.012 - np.minimum(oh * 0.2, oh * (1 - np.abs(u) ** 2.4) ** 0.6)], axis=1), lin('#ffffff'), 3, rows=2)
     face.band('mouth_open', tongue_top, tongue, lin(mo.get('tongue', '#f08a8f')), 3, rows=3)
 
 
@@ -353,7 +355,7 @@ def lock(m, group, to_world, pts, width, thick=0.035, mat='hair', bone='head', n
             c2[:, 0] += side_k * deg * rnd.uniform(0.22, 0.34) * np.linspace(0.4, 1, len(c2))
             c2[:, 2] += 0.022 + 0.02 * np.linspace(0, 1, len(c2)) * rnd.uniform(0.2, 1)
             c2[-1] = c2[-2] + (c2[-1] - c2[-2]) * rnd.uniform(0.55, 0.95)
-            lock(m, group, to_world, c2, width * rnd.uniform(0.26, 0.36), thick * 0.55, mat, bone, n, 8, root, tip_p, colors, twist, belly, subdiv, False, skin, 0)
+            lock(m, group, to_world, c2, width * rnd.uniform(0.26, 0.36), thick * 0.55, mat, bone, n, 8, root, tip_p, (colors[1], colors[1]) if colors and i == 0 else colors, twist, belly, subdiv, False, skin, 0)
     return path
 
 

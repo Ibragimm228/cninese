@@ -1,6 +1,25 @@
 export type PitchFrame = { t: number; hz: number | null; level: number }
 
+type PitchWasm = { memory: WebAssembly.Memory; buffer(): number; capacity(): number; level(): number; detect_pitch(n: number, sampleRate: number): number }
+let wasm: PitchWasm | null = null
+let loading: Promise<void> | null = null
+
+/** Loads the C++ pitch tracker (native/pitch.cpp); the TypeScript version below stays as the fallback. */
+export function loadPitchWasm(): Promise<void> {
+  loading ??= WebAssembly.instantiateStreaming(fetch(`${import.meta.env.BASE_URL}wasm/pitch.wasm`))
+    .then(({ instance }) => { wasm = instance.exports as unknown as PitchWasm })
+    .catch(() => {})
+  return loading
+}
+
 export function detectPitch(buf: Float32Array, sampleRate: number): { hz: number | null; level: number } {
+  if (!wasm || buf.length > wasm.capacity()) return detectPitchJs(buf, sampleRate)
+  new Float32Array(wasm.memory.buffer, wasm.buffer(), buf.length).set(buf)
+  const hz = wasm.detect_pitch(buf.length, sampleRate)
+  return { hz: hz > 0 ? hz : null, level: wasm.level() }
+}
+
+function detectPitchJs(buf: Float32Array, sampleRate: number): { hz: number | null; level: number } {
   let rms = 0
   for (let i = 0; i < buf.length; i++) rms += buf[i] * buf[i]
   rms = Math.sqrt(rms / buf.length)
@@ -30,6 +49,7 @@ export function detectPitch(buf: Float32Array, sampleRate: number): { hz: number
 }
 
 export async function recordPitch(ms: number, onFrame: (f: PitchFrame) => void, signal?: AbortSignal): Promise<PitchFrame[]> {
+  await loadPitchWasm()
   const stream = await navigator.mediaDevices.getUserMedia({ audio: { echoCancellation: true, noiseSuppression: true } })
   const ctx = new AudioContext()
   const src = ctx.createMediaStreamSource(stream)

@@ -5,7 +5,7 @@ import numpy as np
 
 import anatomy as A
 from lib import Model, ball, lin, loft, norm, rigid, transform, tube
-from outfit import fan, folds, Body, pipe, with_sway
+from outfit import fan, folds, Body, box, pipe, with_sway
 
 SKIN, SKIN_SHADE = '#ffdcc4', '#eeab8e'
 HAIR, HAIR_TIP, HAIR_DARK = '#ff8a1f', '#ffb84d', '#e2601a'
@@ -99,6 +99,8 @@ def outfit(m, b):
     for dx, ln in ((0.05, 0.26), (0.1, 0.2)):
         m.add('body', tube([((dx, 1.47, 0.18), 0.022, 0.008), ((dx + 0.01, 1.47 - ln * 0.5, 0.2), 0.026, 0.008), ((dx + 0.025, 1.47 - ln, 0.21), 0.03, 0.006)], 10, 8), 'white',
               with_sway(skin, 'sway_hakama', 1.45, 1.25))
+    # koshi-ita: the stiff board at the back of the hakama
+    m.add('body', box((0, 1.5, -0.165), (0.2, 0.13, 0.035)), 'sleeve', skin, subdiv=0, smooth_shade=False)
     hak = Body([(0.16, 0.37, 0.27, 0.0), (0.7, 0.32, 0.24, 0.0), (1.2, 0.25, 0.185, 0.0), (1.46, 0.215, 0.155, 0.0)])
     hak.add(m, 'robe', with_sway(skin, 'sway_hakama', 1.3, 0.7), color=lambda p: np.tile(lin(ROBE), (len(p), 1)), n=112, rows=30, caps=(True, False), subdiv=1, ripple=(14, 0.06))
     for s in (1, -1):
@@ -106,6 +108,12 @@ def outfit(m, b):
         A.arm(m, b, s, skin='sleeve', r=(0.1, 0.1, 0.112, 0.125))
         A.arm(m, b, s)
         A.hand(m, b, s, 'fist' if s < 0 else 'relaxed')
+        # the white under-robe shows at the cuffs
+        wr, dd = j['wrist'] * [s, 1, 1], j['dir'] * [s, 1, 1]
+        a = np.linspace(0, math.tau, 28, endpoint=False)
+        ux = np.cross(dd, [0, 0, 1.0])
+        cuff = wr - dd * 0.01 + np.outer(np.cos(a), ux) * 0.112 + np.outer(np.sin(a), [0, 0, 1.0]) * 0.112
+        m.add('body', pipe(cuff, 0.013, 6), 'white', rigid(f'forearm_{n}'))
         A.leg(m, b, s, mat='white', r=(0.118, 0.1, 0.073, 0.082, 0.056), top=b['ankle'] + 0.25, bottom=b['ankle'] - 0.02)
         at = np.array([s * j['ankle'][0], 0.0, j['ankle'][2]])
         yaw = (0, s * 0.14, 0)
@@ -125,7 +133,8 @@ def sword(m):
     d = norm(tip - hilt)
     side = norm(np.cross(d, [0, 0, 1.0]))
     length = np.linalg.norm(tip - hilt)
-    skin = rigid('chest')
+    m.bone('prop', hilt + d * length * 0.5, 'chest')
+    skin = rigid('prop')
     t = np.concatenate([[0.2, 0.215], np.linspace(0.23, 0.86, 10), np.linspace(0.88, 1.0, 8)])
     rings = []
     for q in t:

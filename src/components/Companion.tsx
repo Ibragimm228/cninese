@@ -63,7 +63,7 @@ export function CompanionPicker() {
   )
 }
 
-export type LessonBuddyHandle = { react: (ok: boolean) => void }
+export type LessonBuddyHandle = { react: (ok: boolean, streak?: number) => void }
 
 const CHEERS = [['对！', 'верно'], ['很好！', 'очень хорошо'], ['太棒了！', 'отлично'], ['厉害！', 'круто']]
 const COMFORTS = [['加油！', 'держись'], ['没关系', 'ничего страшного'], ['再来！', 'ещё раз']]
@@ -73,9 +73,12 @@ export function LessonBuddy({ ref }: { ref?: Ref<LessonBuddyHandle> }) {
   const companion = useApp((s) => companionFor(s.companionId))
   const stage = useRef<Companion3DHandle>(null)
   const [line, setLine] = useState<{ zh: string; ru: string; ok: boolean; n: number } | null>(null)
+  const misses = useRef(0)
   useImperativeHandle(ref, () => ({
-    react: (ok) => {
-      stage.current?.react(ok ? 'happy' : 'sad')
+    react: (ok, streak = 0) => {
+      // every third answer in a row earns the signature move; every second mistake a shake of the head
+      misses.current = ok ? 0 : misses.current + 1
+      stage.current?.react(ok ? 'happy' : 'sad', ok ? streak > 0 && streak % 3 === 0 : misses.current % 2 === 0)
       const pool = ok ? CHEERS : COMFORTS
       const [zh, ru] = pool[Math.floor(Math.random() * pool.length)]
       setLine((prev) => ({ zh, ru, ok, n: (prev?.n ?? 0) + 1 }))

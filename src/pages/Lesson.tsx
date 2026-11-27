@@ -132,7 +132,7 @@ function LessonPlayer({
     setChecked(pending_)
     setAnswered((a) => a + 1)
     const ids = exerciseWordIds(ex)
-    buddy.current?.react(pending_.ok)
+    buddy.current?.react(pending_.ok, pending_.ok ? combo + 1 : 0)
     if (pending_.ok) {
       sfx.correct()
       setCorrect((c) => c + 1)

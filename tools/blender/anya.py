@@ -100,6 +100,11 @@ def outfit(m, b):
     # white collar, gold buttons and chest emblem
     col = dress.loop(1.775, 40, 0.012, dip=lambda a: 0.05 * np.clip(np.cos(a), 0, 1) ** 2)
     m.add('body', pipe(col, 0.022), 'white', skin)
+    # gold piping down the front, either side of the buttons
+    for s in (1, -1):
+        ys = np.linspace(1.27, 1.72, 24)
+        xs = np.full_like(ys, s * 0.05)
+        m.add('body', pipe(np.stack([xs, ys, dress.z(xs, ys, 1, 0.004)], axis=1), 0.006, 6, False), 'gold', skin)
     for y in (1.36, 1.46, 1.56):
         z = dress.z(np.array([0.0]), np.array([y]))[0]
         m.add('body', ball((0, y, z), 0.02, 12, 8), 'gold', skin)
@@ -111,6 +116,9 @@ def outfit(m, b):
         A.hand(m, b, s, 'grip' if s < 0 else 'relaxed', scale=0.84)
         wr, d = j['wrist'] * f, j['dir'] * f
         m.add('body', tube([(wr - d * 0.07, 0.05, 0.05), (wr - d * 0.06, 0.06, 0.06), (wr - d * 0.015, 0.058, 0.058), (wr - d * 0.005, 0.045, 0.045)], 20, 8), 'white', rigid(f'forearm_{n}'))
+        a = np.linspace(0, math.tau, 24, endpoint=False)
+        ux = np.cross(d, [0, 0, 1.0])
+        m.add('body', pipe(wr - d * 0.062 + np.outer(np.cos(a), ux) * 0.061 + np.outer(np.sin(a), [0, 0, 1.0]) * 0.061, 0.007, 6), 'gold', rigid(f'forearm_{n}'))
         A.leg(m, b, s, mat='white', r=(0.098, 0.084, 0.064, 0.068, 0.046))
         at = np.array([s * j['ankle'][0], 0.0, j['ankle'][2]])
         yaw = (0, s * 0.12, 0)

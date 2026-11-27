@@ -12,7 +12,9 @@ export type Chibi = {
   celebrate: () => void
   look: (x: number, y: number) => void
   /** a quick pleased nod, or a short slump after a mistake */
-  react: (mood: 'happy' | 'sad') => void
+  react: (mood: 'happy' | 'sad', special?: boolean) => void
+  /** plays one of the companion's own idle actions; without a name, the next in turn */
+  perform: (name?: string) => void
   sleep: (on: boolean) => void
 }
 
@@ -27,6 +29,138 @@ type Spec = {
   waveArm: Side
   cheerArms: Side[]
   tick?: (m: Motion) => void
+  /** character-specific things to do while idle; the first one is the signature move */
+  acts: string[]
+}
+
+type ActFace = { eyes?: 'happy' | 'closed'; mouth?: boolean; brows?: number }
+type ActCtx = {
+  /** adds a rotation to a bone on top of its current pose */
+  add: (bone: string, x: number, y: number, z: number) => void
+  /** moves the held prop in world space */
+  lift: (x: number, y: number, z: number) => void
+  bones: Bones
+}
+type Act = { dur: number; face?: (u: number) => ActFace; pose: (u: number, k: number, c: ActCtx) => void }
+
+const bump = (u: number, a: number, b: number) => (u <= a || u >= b ? 0 : Math.sin(((u - a) / (b - a)) * Math.PI))
+const hold = (u: number, a: number, b: number, edge = 0.08) => ease(Math.min(1, Math.max(0, (u - a) / edge))) * ease(Math.min(1, Math.max(0, (b - u) / edge)))
+
+const ACTS: Record<string, Act> = {
+  // Kuroko: flicks the ball up off his finger, watches it and catches it again
+  toss: {
+    dur: 2.4,
+    pose: (u, k, c) => {
+      const up = bump(u, 0.18, 0.82)
+      c.lift(0, up * 0.95, 0)
+      c.add('forearm_R', bump(u, 0.05, 0.3) * 0.35 - up * 0.1, 0, 0)
+      c.add('head', -up * 0.3, -0.12 * k, 0)
+      c.add('neck', -up * 0.1, 0, 0)
+    },
+  },
+  // Kuroko: rolls the ball across to his other hand and back
+  juggle: {
+    dur: 2.8,
+    pose: (u, k, c) => {
+      const over = hold(u, 0.25, 0.75, 0.2)
+      c.lift(over * 0.62, bump(u, 0.1, 0.9) * 0.35 - over * 0.12, over * 0.05)
+      c.add('upperarm_L', -0.55 * over, 0, -0.1 * over)
+      c.add('forearm_L', -1.55 * over, 0, 0)
+      c.add('head', 0.1 * k, 0.25 * over - 0.1 * k, 0)
+    },
+  },
+  // Chrollo: lifts the book and reads, turning a page with his free hand
+  read: {
+    dur: 3.6,
+    face: (u) => ({ brows: u > 0.2 && u < 0.85 ? -0.4 : 0 }),
+    pose: (u, k, c) => {
+      const turn = bump(u, 0.35, 0.65)
+      c.add('upperarm_L', -0.35 * k, 0, 0.1 * k)
+      c.add('forearm_L', -0.45 * k, 0, 0)
+      c.add('head', 0.32 * k, 0.42 * k, 0.05 * k)
+      c.add('neck', 0.08 * k, 0.12 * k, 0)
+      c.add('upperarm_R', -0.75 * k, 0, 0.55 * k)
+      c.add('forearm_R', -1.5 * k - turn * 0.35, 0, 0.5 * k + turn * 0.4)
+      c.add('hand_R', 0, 0, turn * 0.6)
+    },
+  },
+  // Chrollo: hand to his chin, eyes closed for a moment
+  ponder: {
+    dur: 2.6,
+    face: (u) => ({ eyes: u > 0.3 && u < 0.7 ? 'closed' : undefined }),
+    pose: (_u, k, c) => {
+      c.add('upperarm_R', -0.9 * k, 0, 0.3 * k)
+      c.add('forearm_R', -2.1 * k, 0, 0.55 * k)
+      c.add('head', 0.1 * k, -0.1 * k, -0.14 * k)
+      c.add('spine', 0, 0, -0.03 * k)
+    },
+  },
+  // Ichigo: reaches over his shoulder and half-draws Zangetsu
+  draw: {
+    dur: 2.8,
+    face: () => ({ brows: -1 }),
+    pose: (u, k, c) => {
+      const pull = hold(u, 0.35, 0.8, 0.14)
+      c.add('upperarm_R', -0.5 * k, 0, -2.5 * k)
+      c.add('forearm_R', 0, 0, -1.25 * k + pull * 0.45)
+      c.add('spine', 0.05 * k, 0.16 * k, 0)
+      c.add('head', 0.06 * k, -0.2 * k, 0)
+      c.lift(-0.13 * pull, 0.3 * pull, 0)
+    },
+  },
+  // Ichigo: rolls his shoulders and cracks his neck, bored
+  stretch: {
+    dur: 2.6,
+    face: (u) => ({ eyes: u > 0.25 && u < 0.75 ? 'closed' : undefined }),
+    pose: (u, k, c) => {
+      c.add('head', 0, 0, Math.sin(u * Math.PI * 2) * 0.32 * k)
+      c.add('upperarm_L', 0, 0, 0.35 * bump(u, 0, 0.5))
+      c.add('upperarm_R', 0, 0, -0.35 * bump(u, 0.5, 1))
+      c.add('chest', -0.06 * k, 0, 0)
+    },
+  },
+  // Anya: nibbles her peanut, then beams
+  munch: {
+    dur: 3,
+    face: (u) => ({ mouth: u > 0.25 && u < 0.7 && Math.sin(u * 60) > 0, eyes: u > 0.62 ? 'happy' : undefined }),
+    pose: (u, k, c) => {
+      c.add('upperarm_R', -0.45 * k, 0, -0.1 * k)
+      c.add('forearm_R', -0.75 * k, 0, -0.25 * k)
+      c.add('head', 0.12 * k + (u > 0.25 && u < 0.7 ? Math.sin(u * 60) * 0.03 : 0), -0.12 * k, 0)
+    },
+  },
+  // Anya: "waku waku" — both fists up, bouncing on her toes
+  wakuwaku: {
+    dur: 2.4,
+    face: () => ({ eyes: 'happy', mouth: true, brows: 1 }),
+    pose: (u, k, c) => {
+      const hop = Math.abs(Math.sin(u * Math.PI * 6)) * k
+      c.add('upperarm_L', -0.6 * k, 0, 0.1 * k)
+      c.add('forearm_L', -1.8 * k + hop * 0.2, 0, -0.2 * k)
+      c.add('forearm_R', -0.2 * k + hop * 0.2, 0, 0)
+      c.add('spine', -0.05 * hop, 0, 0)
+      c.bones.hips?.position.setY((c.bones.hips.userData.y as number) + hop * 0.05)
+    },
+  },
+  // everyone: looks the question over, head cocked
+  think: {
+    dur: 2.6,
+    face: () => ({ brows: -0.5 }),
+    pose: (u, k, c) => {
+      c.add('head', -0.1 * k, 0.3 * k, 0.2 * k)
+      c.add('spine', 0, 0.08 * k, 0.03 * k)
+      c.add('hips', 0, 0, -0.02 * k + Math.sin(u * Math.PI * 2) * 0.01)
+    },
+  },
+  // everyone, after a mistake: a slow shake of the head
+  nope: {
+    dur: 1.9,
+    face: () => ({ eyes: 'closed', brows: -1 }),
+    pose: (u, k, c) => {
+      c.add('head', 0.14 * k, Math.sin(u * Math.PI * 5) * 0.34 * k, 0)
+      c.add('spine', 0.06 * k, 0, 0)
+    },
+  },
 }
 
 const specs: Record<CompanionId, Spec> = {
@@ -35,19 +169,22 @@ const specs: Record<CompanionId, Spec> = {
     waveArm: 'L',
     cheerArms: ['L'],
     tick: ({ bones, time, air }) => {
-      if (bones.prop) { bones.prop.rotation.y = time * 5; bones.prop.position.y = bones.prop.userData.y + air * 0.25 }
+      if (bones.prop) { bones.prop.rotation.y = time * 5; bones.prop.position.y += air * 0.25 }
     },
+    acts: ['toss', 'juggle', 'think'],
   },
   chrollo: {
     rest: { upperarm_L: [-0.2, 0, 0.08], forearm_L: [-1.3, 0, 0], hand_L: [0, 1.45, 0] },
     waveArm: 'R',
     cheerArms: ['R'],
+    acts: ['read', 'ponder', 'think'],
   },
-  ichigo: { rest: { upperarm_R: [0, 0, 0.1], forearm_R: [-0.35, 0, 0], upperarm_L: [0, 0, -0.1] }, waveArm: 'L', cheerArms: ['L'] },
+  ichigo: { rest: { upperarm_R: [0, 0, 0.1], forearm_R: [-0.35, 0, 0], upperarm_L: [0, 0, -0.1] }, waveArm: 'L', cheerArms: ['L'], acts: ['draw', 'stretch', 'think'] },
   anya: {
     rest: { upperarm_R: [-0.5, 0, 0.1], forearm_R: [-1.7, 0, 0.15], upperarm_L: [0, 0, -0.12] },
     waveArm: 'L',
     cheerArms: ['L'],
+    acts: ['wakuwaku', 'munch', 'think'],
   },
 }
 
@@ -75,7 +212,10 @@ struct ToonMaterial { vec3 diffuseColor; };
 void RE_Direct_Toon( const in IncidentLight directLight, const in vec3 geometryPosition, const in vec3 geometryNormal, const in vec3 geometryViewDir, const in vec3 geometryClearcoatNormal, const in ToonMaterial material, inout ReflectedLight reflectedLight ) {
 	float open = clamp( max( directLight.color.r, max( directLight.color.g, directLight.color.b ) ) / PI, 0.0, 1.0 );
 	float lit = smoothstep( 0.0, 0.035, dot( geometryNormal, directLight.direction ) ) * smoothstep( 0.42, 0.58, open );
-	reflectedLight.directDiffuse += mix( uTint, vec3( 1.0 ), lit ) * material.diffuseColor;
+	float ndl = dot( geometryNormal, directLight.direction );
+	// a deeper core shadow on surfaces that face well away from the light
+	vec3 shade = mix( uTint, uTint * uTint, smoothstep( -0.5, -0.56, ndl ) );
+	reflectedLight.directDiffuse += mix( shade, vec3( 1.0 ), lit ) * material.diffuseColor;
 }
 void RE_IndirectDiffuse_Toon( const in vec3 irradiance, const in vec3 geometryPosition, const in vec3 geometryNormal, const in vec3 geometryViewDir, const in vec3 geometryClearcoatNormal, const in ToonMaterial material, inout ReflectedLight reflectedLight ) {}
 #define RE_Direct RE_Direct_Toon
@@ -180,6 +320,33 @@ export async function createChibi(id: CompanionId, reducedMotion = false, lite =
   let slump = 0
   let asleep = false
   let doze = 0
+  let act: Act | null = null
+  let actT = 0
+  let actTurn = 0
+  let nextAct = 5 + phase
+  const world = new THREE.Vector3()
+  const propRest = bones.prop?.position.clone()
+  const ctx: ActCtx = {
+    bones,
+    add: (name, x, y, z) => {
+      const b = bones[name]
+      if (b) { b.rotation.x += x; b.rotation.y += y; b.rotation.z += z }
+    },
+    lift: (x, y, z) => {
+      const p = bones.prop
+      if (!p?.parent) return
+      p.parent.updateWorldMatrix(true, false)
+      p.getWorldPosition(world)
+      world.x += x; world.y += y; world.z += z
+      p.position.copy(p.parent.worldToLocal(world))
+    },
+  }
+  const perform = (name?: string) => {
+    if (reducedMotion || cheer > 0) return
+    act = ACTS[name ?? spec.acts[actTurn++ % spec.acts.length]] ?? null
+    actT = 0
+    wave = 0
+  }
   // with reduced motion a gesture is a held pose, not an animation
   let greet = false
   let nextBlink = 1.5 + phase
@@ -197,6 +364,20 @@ export async function createChibi(id: CompanionId, reducedMotion = false, lite =
     const time = reducedMotion ? 0 : t + phase
     wave = Math.max(0, wave - dt)
     cheer = Math.max(0, cheer - dt)
+    if (act) {
+      actT += dt
+      if (actT >= act.dur || cheer > 0 || wave > 0) act = null
+    }
+    const busy = !!act || wave > 0 || cheer > 0 || nod > 0 || slump > 0 || asleep || greet
+    if (!busy && !reducedMotion) {
+      nextAct -= dt
+      if (nextAct <= 0) { perform(); nextAct = 6 + Math.random() * 6 }
+    }
+    const actU = act ? actT / act.dur : 0
+    const actK = act ? ease(Math.min(1, actU * 6)) * ease(Math.min(1, (1 - actU) * 6)) : 0
+    const actFace: ActFace = act?.face?.(actU) ?? {}
+    if (bones.hips) bones.hips.position.y = bones.hips.userData.y as number
+    if (bones.prop && propRest) bones.prop.position.copy(propRest)
     nod = Math.max(0, nod - dt)
     slump = Math.max(0, slump - dt)
     const nodPos = nod > 0 ? 1 - nod / NOD : 0
@@ -251,16 +432,16 @@ export async function createChibi(id: CompanionId, reducedMotion = false, lite =
     nextBlink -= dt
     if (nextBlink <= 0) { blink = 0.13; nextBlink = 2.2 + Math.random() * 3.4 }
     blink = Math.max(0, blink - dt)
-    const happy = cheerK > 0.35 || nodK > 0.3 || (greet && reducedMotion)
-    const closed = !happy && ((blink > 0 && !reducedMotion) || slumpK > 0.3 || doze > 0.5)
+    const happy = cheerK > 0.35 || nodK > 0.3 || (greet && reducedMotion) || actFace.eyes === 'happy'
+    const closed = !happy && ((blink > 0 && !reducedMotion) || slumpK > 0.3 || doze > 0.5 || actFace.eyes === 'closed')
     show('eyes_open', !happy && !closed)
     show('iris', !happy && !closed)
     show('eyes_closed', closed)
     show('eyes_happy', happy)
-    const open = cheerK > 0.35 || waveK > 0.35 || (greet && reducedMotion)
+    const open = cheerK > 0.35 || waveK > 0.35 || (greet && reducedMotion) || !!actFace.mouth
     show('mouth_open', open)
     show('mouth_rest', !open)
-    if (bones.brows) bones.brows.position.y = bones.brows.userData.y + Math.max(cheerK, waveK * 0.7, nodK * 0.8) * 0.018 - slumpK * 0.014
+    if (bones.brows) bones.brows.position.y = bones.brows.userData.y + Math.max(cheerK, waveK * 0.7, nodK * 0.8) * 0.018 - slumpK * 0.014 + (actFace.brows ?? 0) * actK * 0.014
 
     // arms
     for (const side of ['L', 'R'] as const) {
@@ -282,6 +463,8 @@ export async function createChibi(id: CompanionId, reducedMotion = false, lite =
       mix(`forearm_${side}`, fore)
       mix(`hand_${side}`, k > 0 ? [0, 0, 0] : r[`hand_${side}`] ?? [0, 0, 0])
     }
+
+    if (act) act.pose(actU, actK, ctx)
 
     // hair, cloth and trinkets lag behind the body
     for (const s of sway) {
@@ -305,7 +488,13 @@ export async function createChibi(id: CompanionId, reducedMotion = false, lite =
     wave: () => { if (reducedMotion) greet = !greet; else if (cheer <= 0) wave = WAVE },
     celebrate: () => { if (reducedMotion) greet = true; else { cheer = CHEER; wave = 0 } },
     look: (x, y) => target.set(x, -y),
-    react: (mood) => { if (reducedMotion || cheer > 0) return; if (mood === 'happy') { nod = NOD; slump = 0 } else { slump = SLUMP; nod = 0 } },
+    react: (mood, special) => {
+      if (reducedMotion || cheer > 0) return
+      if (special) return perform(mood === 'happy' ? spec.acts[0] : 'nope')
+      act = null
+      if (mood === 'happy') { nod = NOD; slump = 0 } else { slump = SLUMP; nod = 0 }
+    },
+    perform,
     sleep: (on) => { asleep = on },
     update,
   }

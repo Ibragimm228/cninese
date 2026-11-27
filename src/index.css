@@ -389,9 +389,11 @@ html.lenis body {
 .pet-option[aria-pressed="true"] { box-shadow: 0 0 0 3px var(--studio-white), 0 0 0 5px var(--pet-ink); }
 .pet-zzz { position: absolute; top: 14%; right: 16%; font: 800 1.05rem var(--font-display); letter-spacing: .08em; color: var(--pet-ink); opacity: .75; animation: pet-zzz 2.6s ease-in-out infinite; pointer-events: none; }
 @keyframes pet-zzz { 0%, 100% { transform: translate(0, 0) rotate(-8deg); opacity: .35; } 50% { transform: translate(6px, -10px) rotate(4deg); opacity: .9; } }
-.lesson-buddy { position: fixed; right: 1.5rem; bottom: 8.2rem; z-index: 15; display: none; width: 11.5rem; pointer-events: none; }
-@media (min-width: 1280px) and (min-height: 700px) { .lesson-buddy { display: block; } }
-.lesson-buddy-canvas { width: 100%; height: 15rem; }
+.lesson-buddy { position: fixed; right: .25rem; bottom: 5.6rem; z-index: 15; width: 5.6rem; pointer-events: none; }
+.lesson-buddy-canvas { width: 100%; height: 7.6rem; }
+@media (max-height: 620px) { .lesson-buddy { display: none; } }
+@media (min-width: 768px) { .lesson-buddy { right: 1rem; bottom: 7.6rem; width: 8.5rem; } .lesson-buddy-canvas { height: 11.5rem; } }
+@media (min-width: 1280px) and (min-height: 700px) { .lesson-buddy { right: 1.5rem; bottom: 8.2rem; width: 11.5rem; } .lesson-buddy-canvas { height: 15rem; } }
 .lesson-buddy-line { position: absolute; right: 72%; top: .4rem; display: grid; min-width: max-content; padding: .5rem .8rem; border-radius: 1rem 1rem .2rem 1rem; background: var(--color-card); color: var(--color-ink); box-shadow: 0 8px 24px rgb(0 0 0 / .14); animation: buddy-line .35s cubic-bezier(.16, 1, .3, 1); }
 .lesson-buddy-line strong { font: 700 1.25rem var(--font-hanzi); }
 .lesson-buddy-line span { font-size: .72rem; opacity: .65; }

@@ -4,6 +4,8 @@ import { PageHeader } from '../components/AppShell'
 import { RightRail } from '../components/RightRail'
 import { addDays, dayKey } from '../lib/date'
 import { useApp } from '../lib/store'
+import { leagueTable, session, syncAvailable, type LeagueRow } from '../lib/sync'
+import { useEffect, useState } from 'react'
 
 const BOTS = ['Аня 🐼', 'Lǐ Wěi', 'Дмитрий', 'Мария К.', 'Wáng Fāng', 'Тимур', 'Олег', 'Zhāng Lì', 'Катя', 'Артём', 'Софья', 'Chén Jié', 'Ильяс', 'Полина']
 
@@ -27,7 +29,15 @@ export default function League() {
   const elapsed = Math.round((Date.now() - new Date(start + 'T00:00:00').getTime()) / 86400000 * 10) / 10
   const rnd = seeded(Number(start.replace(/-/g, '')))
   const myXp = Array.from({ length: 7 }, (_, i) => s.xpByDay[addDays(start, i)] ?? 0).reduce((a, b) => a + b, 0)
-  const rows = [
+  // signed-in learners compete with each other; everyone else gets the practice table of bots
+  const [live, setLive] = useState<LeagueRow[] | null>(null)
+  useEffect(() => {
+    if (!syncAvailable || !session()) return
+    let cancelled = false
+    leagueTable().then((t) => !cancelled && t.some((r) => r.me) && setLive(t)).catch(() => {})
+    return () => { cancelled = true }
+  }, [])
+  const rows = live ?? [
     ...BOTS.map((name) => ({ name, xp: Math.round(rnd() * 90 * Math.min(7, elapsed + 0.3)), me: false })),
     { name: s.name, xp: myXp, me: true },
   ].sort((a, b) => b.xp - a.xp)

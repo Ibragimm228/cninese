@@ -4,7 +4,7 @@ import { companionFor, type CompanionId } from '../data/companions'
 import type { ChibiStage, StageOptions } from '../three/stage'
 import { CompanionArt } from './CompanionArt'
 
-export type Companion3DHandle = { wave: () => void; celebrate: () => void; react: (mood: 'happy' | 'sad') => void }
+export type Companion3DHandle = { wave: () => void; celebrate: () => void; react: (mood: 'happy' | 'sad', special?: boolean) => void }
 
 const loadStage = () => import('../three/stage')
 
@@ -41,7 +41,7 @@ export function Companion3D({
   useImperativeHandle(ref, () => ({
     wave: () => stage.current?.wave(),
     celebrate: () => stage.current?.celebrate(),
-    react: (mood) => stage.current?.react(mood),
+    react: (mood, special) => stage.current?.react(mood, special),
   }))
 
   useEffect(() => {

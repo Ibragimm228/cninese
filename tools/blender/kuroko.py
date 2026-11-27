@@ -27,6 +27,7 @@ def build(lod=0):
     A.draw_brows(face, eye, dict(len=0.11, gap=0.045, w=0.012, color='#6aa9cf', arch=0.004, in_y=-0.004, out_y=-0.006))
     A.draw_mouth(face, dict(y=-0.243, w=0.05, bend=0.001, color='#a8584f'))
     A.draw_nose(face)
+    A.draw_blush(face, 0.175, -0.165, 0.055, 0.026, strength=0.14)
     A.fringe_shadow(face, FRINGE, SKIN)
     hair(m, to_world)
     m.material('jersey', '#ffffff', shade='#c9cfe6')
@@ -114,6 +115,10 @@ def uniform(m, b):
     text('11', 0, 1.72, 0.24, 1, 0.035)
     text('11', 0, 1.74, 0.32, -1, 0.035)
     text('KUROKO', 0, 1.99, 0.05, -1)
+    # the number again on the left leg of the shorts
+    v, f = text_shape('11', 0.075, 0.03)
+    px, py = 0.15 + v[:, 0], 0.99 + v[:, 1]
+    m.add('body', (np.stack([px, py, 0.005 + 0.166 * np.sqrt(np.clip(1 - ((px - 0.136) / 0.146) ** 2, 0, 1)) + 0.006], axis=1), f), 'print', A.leg_skin(b, 1, 0.14), subdiv=0, keep_normals=(0, 0, 1))
     # V collar
     a = np.linspace(0, math.tau, 48, endpoint=False)
     dip = 0.085 * np.clip(np.cos(a), 0, 1) ** 3
