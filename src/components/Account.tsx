@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { session, signIn, signOut, syncAvailable } from '../lib/sync'
+import { useEffect, useState } from 'react'
+import { SESSION_EVENT, session, signIn, signOut, syncAvailable } from '../lib/sync'
 import { Button } from './Button'
 
 const ERRORS: Record<string, string> = {
@@ -16,13 +16,18 @@ export function AccountCard() {
   const [password, setPassword] = useState('')
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
+  useEffect(() => {
+    const refresh = () => setMe(session())
+    window.addEventListener(SESSION_EVENT, refresh)
+    return () => window.removeEventListener(SESSION_EVENT, refresh)
+  }, [])
   if (!syncAvailable) return null
 
   const submit = async (mode: 'login' | 'register') => {
     setBusy(true)
     setError('')
     try {
-      setMe(await signIn(mode, name, password))
+      await signIn(mode, name, password)
       setPassword('')
     } catch (e) {
       const msg = e instanceof Error ? e.message : ''
@@ -38,7 +43,7 @@ export function AccountCard() {
       {me ? (
         <div className="mt-3 flex flex-wrap items-center justify-between gap-3">
           <p className="text-ink-soft"><strong className="text-ink">{me.name}</strong> · прогресс синхронизируется</p>
-          <Button variant="paper" onClick={() => void signOut().then(() => setMe(null))}>Выйти</Button>
+          <Button variant="paper" onClick={() => void signOut()}>Выйти</Button>
         </div>
       ) : (
         <form className="mt-3 grid gap-3 sm:grid-cols-[1fr_1fr_auto_auto]" onSubmit={(e) => { e.preventDefault(); void submit('login') }}>

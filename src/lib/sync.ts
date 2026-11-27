@@ -3,6 +3,10 @@ import { useApp } from './store'
 
 const API = (import.meta.env.VITE_API_URL as string | undefined)?.replace(/\/$/, '')
 const KEY = 'moli-session'
+const BASE = 'moli-sync-base'
+const STALE = 'progress changed on another device'
+/** Fired on `window` when someone signs in or out. */
+export const SESSION_EVENT = 'moli-session'
 
 /** Accounts exist only when the site was built with a server address. */
 export const syncAvailable = !!API
@@ -37,15 +41,26 @@ async function call<T>(path: string, init: RequestInit = {}): Promise<T> {
 
 const snapshot = () => JSON.parse(JSON.stringify(useApp.getState())) as Record<string, unknown>
 
+let timer: ReturnType<typeof setTimeout> | undefined
+
 export async function push(): Promise<void> {
   if (!API || !session()) return
-  await call('/api/progress', { method: 'PUT', body: JSON.stringify({ state: snapshot(), week: weekKeys() }) })
+  try {
+    const body = { state: snapshot(), week: weekKeys(), base: Number(localStorage.getItem(BASE) ?? 0) }
+    const { updatedAt } = await call<{ updatedAt: number }>('/api/progress', { method: 'PUT', body: JSON.stringify(body) })
+    localStorage.setItem(BASE, String(updatedAt))
+  } catch (e) {
+    // another device saved first: catch up with it instead of overwriting its lessons
+    if (e instanceof Error && e.message === STALE) await pull()
+    else throw e
+  }
 }
 
 /** Takes the server copy when it is further along than this device, otherwise uploads this one. */
 export async function pull(): Promise<void> {
   if (!API || !session()) return
-  const { state } = await call<{ state: (Record<string, unknown> & { xp?: number }) | null }>('/api/progress')
+  const { state, updatedAt } = await call<{ state: (Record<string, unknown> & { xp?: number }) | null; updatedAt: number }>('/api/progress')
+  localStorage.setItem(BASE, String(updatedAt))
   if (state && (state.xp ?? 0) > useApp.getState().xp) useApp.setState({ ...state, theme: useApp.getState().theme })
   else await push()
 }
@@ -54,19 +69,25 @@ export async function signIn(mode: 'login' | 'register', name: string, password:
   const s = await call<Session>(`/api/${mode}`, { method: 'POST', body: JSON.stringify({ name, password }) })
   localStorage.setItem(KEY, JSON.stringify(s))
   await pull()
+  window.dispatchEvent(new Event(SESSION_EVENT))
   return s
 }
 
 export async function signOut(): Promise<void> {
+  clearTimeout(timer)
   await call('/api/logout', { method: 'POST' }).catch(() => {})
   localStorage.removeItem(KEY)
+  localStorage.removeItem(BASE)
+  // the account's progress stays on the server and must not be left for the next person on this browser
+  const { theme, reset } = useApp.getState()
+  reset()
+  useApp.setState({ theme })
+  window.dispatchEvent(new Event(SESSION_EVENT))
 }
 
 export function leagueTable(): Promise<LeagueRow[]> {
   return call<LeagueRow[]>(`/api/league?week=${weekKeys()[0]}`)
 }
-
-let timer: ReturnType<typeof setTimeout> | undefined
 
 /** Uploads progress a moment after it changes, and catches up with the server on start. */
 export function startSync() {

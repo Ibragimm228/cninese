@@ -13,6 +13,7 @@ import { lastNDays, weekdayShort } from '../lib/date'
 import { learnedWords } from '../lib/progress'
 import { hasChineseVoice } from '../lib/speech'
 import { useApp } from '../lib/store'
+import { session, signOut } from '../lib/sync'
 
 export default function Profile() {
   const s = useApp()
@@ -124,10 +125,10 @@ export default function Profile() {
           </div>
           <div className="rounded-3xl border-2 border-wrong/30 p-6">
             <h2 className="font-display text-lg font-bold">Сбросить прогресс</h2>
-            <p className="mt-1 text-sm text-ink-soft">Удалит весь прогресс, XP и достижения в этом браузере.</p>
+            <p className="mt-1 text-sm text-ink-soft">Удалит весь прогресс, XP и достижения в этом браузере.{session() && ' Вы выйдете из аккаунта, сохранённая в нём копия останется.'}</p>
             {confirmReset ? (
               <div className="mt-4 flex gap-2">
-                <Button variant="wrong" onClick={() => { s.reset(); setConfirmReset(false) }}>Да, сбросить</Button>
+                <Button variant="wrong" onClick={() => { if (session()) void signOut(); else s.reset(); setConfirmReset(false) }}>Да, сбросить</Button>
                 <Button variant="ghost" onClick={() => setConfirmReset(false)}>Отмена</Button>
               </div>
             ) : (
